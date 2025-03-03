@@ -25,20 +25,96 @@
 `/sbin/mdadm --detail --scan >> /etc/mdadm.conf`
 
 Обеспечьте автоматическое монтирование в папку /raid5 
-`mkdir /etc/raid5`
+`mkdir /mnt/raid5`
 в файле /etc/fstab пишем(пробелы это tab)
-`/dev/md0        /etc/raid5      ext4    defaults        0       0`
+`/dev/md0        /mnt/raid5      ext4    defaults        0       0`
 перезагружаем демона
 `systemctl daemon-reload`
 Монтируем все диски указанные в fstab
 `mount -a`
 Проверяем монтирование командой df -h
+*Результатом вывода путь будет /mnt/raid5*
 <p align="center">
   <img src="mounted.png" alt="Монтированный диск" />
 </p>
 
 Настройте сервер сетевой файловой системы(nfs), в качестве папки общего доступа выберите /raid5/nfs, доступ для чтения и записи для всей сети в сторону HQ-CLI - пока нет
 
+### Настраиваем на HQ-SRV:
+
+**1.** Устанавливаем **утилиты:**
+
+```
+apt-get install -y nfs-server
+```
+
+**2.** **Создаем директорию** командой:
+
+```
+mkdir /mnt/raid5/nfs
+```
+
+**3.** Задаем **права директории**:
+
+```
+chmod 766 /mnt/raid5/nfs
+```
+
+**4.** В файл **`/etc/exports`** добавляем строку(ip нашего HQ-CLI):
+
+```
+/mnt/raid5/nfs 10.0.3.0/28(rw,no_root_squash)
+```
+
+**5.** **Экспорт** файловой системы:
+
+```
+exportfs -arv
+```
+
+**6.** Запускаем **NFS сервер** командой:
+
+```
+systemctl enable --now nfs-server
+```
+### Настраиваем на HQ_CLI:
+**1.** Устанавливаем NFS клиент:
+
+```
+apt-get install -y nfs-client
+```
+
+**2.** Создаем директорию командой:
+
+```
+mkdir /mnt/nfs
+```
+
+**3.** После задаем права:
+
+```
+chmod 777 /mnt/nfs
+```
+
+**4.** Добавляем в файл `/etc/fstab` строку:
+
+```
+10.0.0.2:/mnt/raid5/nfs  /mnt/nfs  nfs  defaults  0  0
+
+ВСЕ ПРОБЕЛЫ СДЕЛАНЫ TAB`ом
+```
+
+**5.** Далее монтируем ресурс командой:
+
+```
+mount -a
+```
+
+❗ После можно проверить монтирование командой:
+
+```
+df -h
+```
 ## ✔️ Задание 3
 
 ### Настройте службу сетевого времени на базе сервиса chrony
@@ -113,6 +189,8 @@ systemctl enable --now  chrony
 <p align="center">
   <img src="chronycclients.png" alt="Клиенты chrony" />
 </p>
+
+
 ## ✔️ Задание 4 - (Тестируется)
 
 ### Сконфигурируйте ansible на сервере BR-SRV
@@ -431,46 +509,28 @@ docker-compose -f wiki.yaml up -d
   
 - Пробросьте порт 2024 в порт 2024 на BR-SRV на маршрутизаторе BR-RTR
 
-<br/>
-
-<details>
-<summary><strong>[Решение]</strong></summary>
-<br/>
-
 ### BR-RTR
 
 **1.** Проброс **80** порта и **2024** для BR-SRV
+
+в `etc/ufw/before.rules` в блоке nat пишем
+
 ```
-### Проброс порта 80 на порт 8080 на BR-SRV
-sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 192.168.0.2:8080
-
-### Разрешение трафика на **BR-SRV**
-sudo iptables -A FORWARD -p tcp -d 192.168.0.2 --dport 8080 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
-
-######################################
-
-### Проброс порта 2024 на BR-SRV
-sudo iptables -t nat -A PREROUTING -p tcp --dport 2024 -j DNAT --to-destination 192.168.0.2:2024
-
-# Разрешение трафика на BR-SRV
-sudo iptables -A FORWARD -p tcp -d 192.168.0.2 --dport 2024 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+#to br-srv
+-A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 10.0.2.2:8080
+#to br-srv              
+-A PREROUTING -p tcp --dport 2024 -j DNAT --to-destination 10.0.2.2:2024
 ```
 <br/>
 
+И на
 ### HQ-RTR
 
 **2.** Проброс порта **2024** для HQ-SRV
 ```
-### Проброс порта 2024 на HQ-SRV
-sudo iptables -t nat -A PREROUTING -p tcp --dport 2024 -j DNAT --to-destination 192.168.100.62:2024
-
-### Разрешение трафика на HQ-SRV
-sudo iptables -A FORWARD -p tcp -d 192.168.100.62 --dport 2024 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+#2024 to hq-srv
+-A PREROUTING -p tcp --dport 2024 -j DNAT --to-destination 10.0.0.2:2024
 ```
-<br/>
-
-</details>
-
 <br/>
 
 ## ✔️ Задание 7 (Тестируется)
@@ -491,17 +551,13 @@ sudo iptables -A FORWARD -p tcp -d 192.168.100.62 --dport 2024 -m state --state 
     
   - Основные параметры отметьте в отчёте
 
-<details>
-<summary><strong>[Решение]</strong></summary>
-<br/>
-
 ### HQ-SRV
 
 **1.** Устанавливаем необходимые **пакеты**:
 ```
 sudo apt update
 
-sudo apt install -y apache2 mariadb-server mariadb-client php php-mysql libapache2-mod-php php-xml php-mbstring php-zip php-curl php-gd git
+sudo apt install -y apache2 mariadb-server mariadb-client php php-mysql libapache2-mod-php php-xml php-mbstring php-zip php-curl php-gd php-intl git
 ```
 </br>
 
@@ -530,38 +586,6 @@ EXIT;
 ```
 </br>
 
-**`НЕОБЯЗАТЕЛЬНО`**
-
-**Настройка безопасности** Mariadb
-  <details>
-  <summary><strong>[Подробнее]</strong></summary>
-  </br>
-
-  **1.** Запуск скрипта безопасности:
-  ```
-  sudo mysql_secure_installation
-  ```
-  </br>
-
-  **2.** После запуска скрипта вам будет предложено ответить на несколько вопросов. Вот что вам нужно будет сделать:
-
-  - **`Введите текущий пароль для пользователя root`**: Если вы только что установили MariaDB и не устанавливали пароль, просто нажмите **Enter**.
-
-  - **`Установить пароль для пользователя root?`**: Если вы хотите установить пароль для пользователя **root**, выберите **Y (Yes)** и **введите новый пароль**. **Рекомендуется использовать сложный пароль**.
-
-  - **`Удалить анонимных пользователей?`**: Выберите **Y (Yes)**, **чтобы удалить анонимных пользователей**. Это **повысит безопасность**.
-
-  - **`Запретить удаленный доступ к пользователю root?`**: Выберите **Y (Yes)**, чтобы **запретить удаленный доступ к пользователю root**. Это также повысит безопасность.
-
-  - **`Удалить тестовую базу данных и доступ к ней?`**: Выберите **Y (Yes)**, чтобы **удалить тестовую базу данных**. Это предотвратит доступ к ней.
-
-  - **`Перезагрузить таблицы привилегий?`**: Выберите **Y (Yes)**, чтобы **перезагрузить таблицы привилегий**, чтобы **изменения вступили в силу**.
-
-  </br>
-  
-  </details>
-  </br>
-
 **5.** Перезапускаем MariaDB:
 ```
 systemctl restart mariadb-server
@@ -573,7 +597,7 @@ systemctl restart mariadb-server
 
 **5.** Заходим в директорию где будет установлен **moodle**
 ```
-cd /var/www/
+cd /var/www/html/
 ```
 </br>
 
@@ -596,13 +620,18 @@ git tag
 ```
 </br>
 
-**9.** Клонирование репозитория **Moodle**
+**9.** Клонирование репозитория **Moodle**(это способ настройки флекса, у нас так не вышло)
 ```
 sudo git checkout -t origin/MOODLE_452_STABLE
                                     ^ данная версия актуальна в момент написания методички, проверяйте версию в git tag
 ```
 </br>
-
+**9.** У нас вышло так:
+```
+git branch -a
+git branch --track MOODLE_405_STABLE origin/MOODLE_405_STABLE
+git checkout MOODLE_405_STABLE
+```
 **10.** Настройка директорий и прав:
 ```
 sudo mkdir -p /var/www/moodledata
@@ -650,7 +679,20 @@ sudo systemctl restart apache2
 
 ## Настройка в Moodle в Web-интерфейсе
 
-**1.** Откройте веб-браузер и перейдите по адресу http://192.168.100.62/moodle.
+**1.** Откройте веб-браузер и перейдите по адресу http://10.0.0.2/moodle.
+Перед установкой возможно нужно будет решить некоторые проблемы совместимости, например
+у нас потребовало отредактировать файл `/etc/php/apache2/php.ini` следующим образом
+```
+extension=php_intl.dll
+
+[intl]
+intl.default_locale=en_utf8
+intl.error_level=E_WARNING
+
+max_input_vars = 5000
+```
+
+Сами мы это не придумали, ошибки заботливо ссылают на документацию. Читайте внимательно если че
 
 **2.** В процессе установки укажите данные для подключения к базе данных:
 
@@ -660,9 +702,7 @@ sudo systemctl restart apache2
 
 **`Пароль`**: P@ssw0rd
 
-</details>
-</br>
-
+Дальше включаем соображалку и заполняем поля желательно по заданию, на крайняк по наитию
 ## ✔️ Задание 8
 
 ### Настройте веб-сервер nginx как обратный прокси-сервер на HQ-RTR
