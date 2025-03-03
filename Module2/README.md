@@ -13,7 +13,9 @@
 </p>
 При необходимости перезагружаем машину
 Шаблон команды настройки массива для наглядности
-`mdadm --create /dev/<название массива> --level=<Версия RAID> --raid-devices=<Количество устройств для массива> /dev/<Диск 1> ... /dev/<Диск n>`
+```
+mdadm --create /dev/<название массива> --level=<Версия RAID> --raid-devices=<Количество устройств для массива> /dev/<Диск 1> ... /dev/<Диск n>
+```
 
 В нашем случае команда имеет вид
 `/sbin/mdadm --create /dev/md0 --level=5 --raid-devices=3 /dev/sdb /dev/sdc /dev/sdd`
@@ -27,12 +29,15 @@
 Обеспечьте автоматическое монтирование в папку /raid5 
 `mkdir /mnt/raid5`
 в файле /etc/fstab пишем(пробелы это tab)
-`/dev/md0        /mnt/raid5      ext4    defaults        0       0`
+```
+/dev/md0        /mnt/raid5      ext4    defaults        0       0
+```
 перезагружаем демона
 `systemctl daemon-reload`
 Монтируем все диски указанные в fstab
 `mount -a`
 Проверяем монтирование командой df -h
+</br>
 *Результатом вывода путь будет /mnt/raid5*
 <p align="center">
   <img src="mounted.png" alt="Монтированный диск" />
@@ -154,7 +159,7 @@ allow 0/0
 
 `allow` - устройства с каких подсетей имеют возможность синхронизироваться с сервером;
 
-</br>
+<br/>
 
 **3.** После установки, **перезагружаем сервис** и **добавляем в автозагрузку**:
 ```
@@ -163,21 +168,29 @@ systemctl restart chrony
 systemctl enable --now  chrony
 ```
 
-</br>
+<br/>
 После перезагружаем сервис и добавляем в автозагрузку:
 `systemctl restart chrony`
+
 `systemctl enable --now  chrony`
+
 Настройка на HQ-SRV HQ-CLI BR-RTR BR-SRV(на всех аналогично):
 Устанавливаем chrony:
-	`apt install chrony`
+
+`apt install chrony`
+
 Далее редактируем конфигурационный файл `sudo nano /etc/chrony/chrony.conf`
 Прописываем наш сервер:
-	`server 10.0.0.1 iburst prefer`
+
+`server 10.0.0.1 iburst prefer`
+
 И комментируем строчку: `#pool 2.debian.pool.ntp.org iburst`
 	
 После перезагружаем сервис и добавляем в автозагрузку:
 `systemctl restart chrony`
+
 `systemctl enable --now  chrony`
+<br/>
 Проверка на роутере:
 	`chronyc clients`
 <p align="center">
@@ -201,10 +214,6 @@ systemctl enable --now  chrony
 
 - Все указанные машины должны без предупреждений и ошибок отвечать pong на команду ping в ansible посланную с BR-SRV
 
-<br/>
-
-<details>
-<summary><strong>[Решение]</strong></summary>
 <br/>
 
 ## Настройка ansible производится на `BR-SRV`
@@ -252,14 +261,14 @@ su sshuser
 - Копируем ключ для пользователя **sshuser** на **`HQ-SRV`**
   - На HQ-SRV ssh порт изменен, указываем его:
 ```
-ssh-copy-id -p 2024 sshuser@192.168.100.62
+ssh-copy-id -p 2024 sshuser@10.0.0.2
 ```
 
 <br/>
 
 - Копируем ключ для пользователя **user** на **`HQ-CLI`**
 ```
-ssh-copy-id user@192.168.200.2
+ssh-copy-id user@10.0.3.3
 ```
 
 <br/>
@@ -288,15 +297,16 @@ nano /etc/ansible/demo
 <br/>
 
 **2.** Приводим **файл** в следующий вид:
->```
->[hq]
->192.168.200.2 ansible_port=2024 ansible_user=sshuser
->192.168.100.62 ansible_user=user
->172.16.4.2 ansible_user=net_admin
->
->[br]
->172.16.5.2 ansible_user=net_admin
->```
+
+```
+[hq]
+10.0.0.2 ansible_port=2024 ansible_user=sshuser
+10.0.3.3 ansible_user=viktorov
+172.16.4.2 ansible_user=net_admin
+
+[br]
+172.16.5.2 ansible_user=net_admin
+```
 
 **где:**
 - `ansible_port` - Номер порта ssh, если не 22
@@ -331,10 +341,6 @@ ansible all -i /etc/ansible/demo -m ping
 ```
 <br/>
 
-</details>
-
-<br/>
-
 ## ✔️ Задание 5
 
 ### Развертывание приложений в Docker на сервере BR-SRV
@@ -353,36 +359,25 @@ ansible all -i /etc/ansible/demo -m ping
 
 - Разверните
 
-- Он должен создавать базу с названием mediawiki, доступную по стандарнтому порту, пользователя wiki с паролем WikiP@ssw0rd должен иметь права доступа к этой базе данных
+- Он должен создавать базу с названием mediawiki, доступную по стандартному порту, пользователя wiki с паролем WikiP@ssw0rd должен иметь права доступа к этой базе данных
 
 - MediaWiki должна быть доступна извне через порт 8080
 
 <br/>
 
-<details>
-<summary><strong>[C помощью CLI]</strong></summary>
-<br/>
-
-### Установка Wiki (по SSH с CLI на BR-SRV)
-
-**1.** Подключаемся при помощи **HQ-CLI** к **BR-SRV** по `SSH`:
-```
-ssh sshuser@192.168.0.2 -p2024
-```
-
+### Установка Wiki (на BR-SRV)
+От sshuser
 **2.** Обновляем пакеты и устанавливаем **Docker**:
 ```
 sudo apt update
 
 sudo apt install docker docker-compose docker-doc
 ```
-</br>
 
 **3.**  Добавляем **Docker** в автозагрузку и запускаем:
 ```
 systemctl enable docker --now
 ```
-</br>
 
 **4.** Проверяем статус запущенной службы **(Docker)** и информацию:
 ```
@@ -399,10 +394,8 @@ docker info
 
 </br>
 
-**6.** В домашней директории пользователя **sshuser** создаем композер-файл **wiki.yaml**:
+**6.** В домашней директории пользователя root создаем композер-файл **wiki.yaml**:
 ```
-cd /home/sshuser
-
 nano wiki.yaml
 ```
 
@@ -434,7 +427,7 @@ sudo docker-compose -f wiki.yaml up -d
 
 ### Настройка Wiki через WEB-интерфейс:
 
-**1.** Переходим на `HQ-CLI` в браузере по адресу **http://192.168.0.2:8080** (айпишник BR-SRV:8080):
+**1.** Переходим на `HQ-CLI` в браузере по адресу **http://10.0.2.2:8080** (айпишник BR-SRV:8080):
 - Для продолжения установки через **WEB-интерфейс** - нажимаем **`set up the wiki`**
  
   </br>
@@ -462,9 +455,9 @@ sudo docker-compose -f wiki.yaml up -d
 
 </br>
 
-**6.** Будет автоматически скачен файл **`LocalSettings.php`** - который необходимо передать на **BR-SRV** c HQ-CLI в директорию **`/home/sshuser`** туда же где лежит **`wiki.yaml`**:
+**6.** Будет автоматически скачен файл **`LocalSettings.php`** - который необходимо передать в директорию **`/home/sshuser`** туда же где лежит **`wiki.yaml`**:
 ```
-scp -P 2024 /home/user/Загрузки/LocalSettings.php sshuser@192.168.0.2:/home/sshuser
+mv /home/sshuser/Загрузки/LocalSettings.php /home/sshuser/
 ```
 </br>
 
@@ -472,7 +465,9 @@ scp -P 2024 /home/user/Загрузки/LocalSettings.php sshuser@192.168.0.2:/h
 ```
 nano /home/sshuser/wiki.yaml
 ```
-![image](https://github.com/Flicks1383/Demo2025_debian/blob/main/Module2/phplocalconfigwiki.png)
+<p align="center">
+  <img src="phplocalconfigwiki.png" alt="phpwiki" />
+</p>
 
 </br>
 
@@ -484,7 +479,7 @@ docker-compose -f wiki.yaml up -d
 ```
 </br>
 
-**9.** Проверяем доступ к Wiki **`http://192.168.0.2:8080`**
+**9.** Проверяем доступ к Wiki **`http://10.0.2.2:8080`**
 
 Входим под
 
@@ -494,14 +489,10 @@ docker-compose -f wiki.yaml up -d
 
 </br>
 
-</details>
 
 ## ✔️ Задание 6 (Тестируется)
 
 ### На маршрутизаторах сконфигурируйте статическую трансляцию портов
-
->[!WARNING]
->Настройка портов проходит с помощью **[IPTABLES](https://github.com/Flicks1383/Demo2025_debian/blob/main/Module1/README.md#%EF%B8%8F-задание-2 "Установка IPtables")**
 
 - Пробросьте порт 80 в порт 8080 на BR-SRV на маршрутизаторе BR-RTR, для обеспечения работы сервиса wiki
   
@@ -712,10 +703,6 @@ max_input_vars = 5000
 - При обращении к HQ-RTR по доменному имени wiki. au-team.irpo клиента должно перенаправлять на BR-SRV на порт, на сервис mediawiki
 <br/>
 
-<details>
-<summary><strong>[Решение]</strong></summary>
-<br/>
-
 **1.** Установка **Nginx**:
 ```
 sudo apt install nginx -y
@@ -738,7 +725,7 @@ server  {
         server_name moodle.au-team.irpo;
 
         location / {
-            proxy_pass http://192.168.100.62:80;
+            proxy_pass http://10.0.0.2:80/moodle;
         }
 }
 
@@ -747,29 +734,28 @@ server {
         server_name wiki.au-team.irpo;
 
         location / {
-            proxy_pass http://192.168.0.2:8080;
+            proxy_pass http://10.0.2.2:8080;
         }
 }
 ```
-</br>
-
-### ПРОВЕРКА
-
-- На **`HQ-CLI`** в браузере заходим по доменному имени:
-
-  на **`Moodle`** – moodle.au-team.irpo
-
-  на **`MediaWiki`** – wiki.au-team.irpo
-
-
 </br>
 
 **5.** Перезагружаем **`Nginx`**
 ```
 systemctl restart nginx
 ```
+### ПРОВЕРКА
 
-</details>
+- На **`HQ-CLI`** в браузере заходим по доменному имени:
+
+  на **`Moodle`** – http://moodle.au-team.irpo
+
+  на **`MediaWiki`** – http://wiki.au-team.irpo
+
+
+</br>
+
+
   
 ## ✔️ Задание 9
 

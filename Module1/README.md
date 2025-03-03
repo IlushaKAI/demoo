@@ -29,9 +29,9 @@
 | Устройство | Пакеты                                                                                  |
 | ---------- | --------------------------------------------------------------------------------------- |
 | ISP        | `apt-get install network-manager ufw frr ssh -y`                                        |
-| HQ-RTR     | `apt-get install network-manager sudo ufw ssh frr isc-dhcp-server chrony -y`            |
-| HQ-SRV     | `apt-get install openssh-server ssh bind9 bind9-utils chrony -y`                        |
-| HQ-CLI     | `apt-get install chrony ssh -y`                                                         |
+| HQ-RTR     | `apt-get install network-manager sudo ufw ssh frr isc-dhcp-server chrony nginx -y`      |
+| HQ-SRV     | `apt-get install openssh-server ssh bind9 bind9-utils chrony nfs-server -y`             |
+| HQ-CLI     | `apt-get install chrony ssh nfs-client -y`                                              |
 | BR-RTR     | `apt-get install network-manager sudo ssh ufw frr chrony -y`                            |
 | BR-SRV     | `apt-get install openssh-server ssh chrony docker docker-compose docker-doc ansible -y` |
 
