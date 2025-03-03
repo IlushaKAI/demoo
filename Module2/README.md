@@ -40,7 +40,7 @@ mdadm --create /dev/<название массива> --level=<Версия RAID
 </br>
 *Результатом вывода путь будет /mnt/raid5*
 <p align="center">
-  <img src="mounted.png" alt="Монтированный диск" />
+  <img src="Mounted.png" alt="Монтированный диск" />
 </p>
 
 Настройте сервер сетевой файловой системы(nfs), в качестве папки общего доступа выберите /raid5/nfs, доступ для чтения и записи для всей сети в сторону HQ-CLI - пока нет
@@ -617,19 +617,23 @@ sudo git checkout -t origin/MOODLE_452_STABLE
                                     ^ данная версия актуальна в момент написания методички, проверяйте версию в git tag
 ```
 </br>
-**9.** У нас вышло так:
+**9.**  У нас вышло так:
+
 ```
 git branch -a
 git branch --track MOODLE_405_STABLE origin/MOODLE_405_STABLE
 git checkout MOODLE_405_STABLE
 ```
+
 **10.** Настройка директорий и прав:
+
 ```
 sudo mkdir -p /var/www/moodledata
 sudo chown -R www-data:www-data /var/www/moodledata
 sudo chmod -R 770 /var/www/moodledata
 sudo chown -R www-data:www-data /var/www/moodle
 ```
+
 </br>
 
 **11.** Создание файла конфигурации **Apache**
