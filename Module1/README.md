@@ -22,246 +22,142 @@
 |                     |                                   |         |
 
 ### Необходимые пакеты для установки
+==Установите пакеты пока у вас на всех машинах рабочий NAT!==
+перед установкой apt-get update
 
 | Устройство | Пакеты                                                                                  |
 | ---------- | --------------------------------------------------------------------------------------- |
-| ISP        | `apt get install network-manager ufw frr -y`                                            |
-| HQ-RTR     | `apt get install network-manager sudo ssh frr isc-dhcp-server chrony -y`                |
-| HQ-SRV     | `apt get install openssh-server ssh bind9 bind9-utils chrony -y`                        |
-| HQ-CLI     | `apt get install chrony yandex-browser-stable -y`                                       |
-| BR-RTR     | `apt get install network-manager sudo ssh frr chrony -y`                                |
-| BR-SRV     | `apt get install openssh-server ssh chrony docker docker-compose docker-doc ansible -y` |
+| ISP        | `apt-get install network-manager ufw frr ssh -y`                                        |
+| HQ-RTR     | `apt-get install network-manager sudo ufw ssh frr isc-dhcp-server chrony -y`            |
+| HQ-SRV     | `apt-get install openssh-server ssh bind9 bind9-utils chrony -y`                        |
+| HQ-CLI     | `apt-get install chrony ssh -y`                                                         |
+| BR-RTR     | `apt-get install network-manager sudo ssh ufw frr chrony -y`                            |
+| BR-SRV     | `apt-get install openssh-server ssh chrony docker docker-compose docker-doc ansible -y` |
 
-## ✔️ Задание 1
+## ✔️ 1.1
 ### Произведите базовую настройку устройств
 Добавляем лан-сегменты согласно таблице 
 **При этом первый сетевой адаптер мы не удаляем!**
 
-1.1 Произведите базовую настройку устройств. P.S. чтобы настройки вступили в силу необходимо деактивировать/активировать соединение в nmtui. Если `device strictly unmanaged` нужно удалить упоминание(либо просто закомментировать) этого интерфейса в `/etc/interfaces`.
+1.1 Произведите базовую настройку устройств. 
+P.S. чтобы настройки вступили в силу необходимо деактивировать/активировать соединение в nmtui. Если `device strictly unmanaged` нужно удалить упоминание(либо просто закомментировать) этого интерфейса в `/etc/interfaces`.
 
-![Изображение выглядит как текст, Шрифт, число, программное обеспечение
-Автоматически созданное описание](https://lh7-rt.googleusercontent.com/docsz/AD_4nXcq8Lj1FdiGRncx41k3Su5Ilga4tfF3cd76gEcWzIkEFTwNLxBLyRA5-lluKwJju9GLe6-xsd3cwMauX90abO-KJzLMH6EUWSPCDa8hZBSXgSQGwPdTcHRXzFfh1DWa4CY_20guUZSCDclOKlwCFg?key=S9gTAGa0He-aNjXVJ0-E_XG4)
+<p align="center">
+  <img src="примернастройки.png" alt="Топология" />
+</p>
 
-Обязательно лан-адаптеры ставим в режим Manual и ставим галочку в следующем месте.
+Обязательно лан-адаптеры ставим в режим Manual и ставим галочку в одном из пунктов
 
-![Изображение выглядит как текст, снимок экрана, дисплей, программное обеспечение
-Автоматически созданное описание](https://lh7-rt.googleusercontent.com/docsz/AD_4nXcJt0ovw8xv4Fhtt8YtztguRGUkjzgi_K0GsSaKLml1V_bDd70Fo54-6XCshmcCNZ6n3TDgCTRrOoC7MDdkGB1_HmxBuM01anlO4qgMS-lPfIhVVgIQ6sR7UdgLLRk3LPxnRozJ6oQAvgEX-jZlRnU?key=S9gTAGa0He-aNjXVJ0-E_XG4)
+Также на забыть в `/etc/sysctl.conf` поставить `net.ipv4.ip_forward = 1`
 
-1.1 Для изменения имени устройства легче использовать nmtui.
-
-
-## ✔️ Задание 2
+## ✔️ Задание 1.2
 
 ### Настройка ISP
-
-- Настройте адресацию на интерфейсах:
-
-  - Интерфейс, подключенный к магистральному провайдеру, получает адрес по DHCP **[Выполнено в задании 1]**
-
-  - Настройте маршруты по умолчанию там, где это необходимо 
-
-  - Интерфейс, к которому подключен HQ-RTR, подключен к сети 172.16.4.0/28 **[Выполнено в задании 1]**
-
-  - Интерфейс, к которому подключен BR-RTR, подключен к сети 172.16.5.0/28 **[Выполнено в задании 1]**
-
+*Все остальные пункты по сути сделали в первом задании*
   - На ISP настройте динамическую сетевую трансляцию в сторону HQ-RTR и BR-RTR для доступа к сети Интернет
-
-<br/>
-
-<details>
-<summary><strong>[Решение]</strong></summary>
-<br/>
-
-
-### Настройка динамической сетевой трансляции на `ISP`
-
+  Для начала на всякий случай сбросим все настройки ufw
 ```
-echo net.ipv4.ip_forward=1 > /etc/sysctl.conf
-apt-get install iptables iptables-persistent –y  
-iptables –t nat –A POSTROUTING –s 172.16.4.0/28 –o ens192 –j MASQUERADE  
-iptables –t nat –A POSTROUTING –s 172.16.5.0/28 –o ens192 –j MASQUERADE
-netfilter-persistent save
-systemctl restart netfilter-persistent  
+ufw reset  
+```
+Затем разрешим все приходящие пакеты
+```
+ufw default allow incoming
+```
+И исходящие
+```
+ufw default allow outgoing
 ```
 
-> Для проверки можно использовать команду: **`iptables –L –t nat`** - должны высветится в Chain POSTROUTING две настроенные подсети
-
-#
-
-</details>
-
-<br/>
-
-## ✔️ Задание 3
-
-> [!WARNING]
-> Обратите внимание, что группа **wheel** не используется!
->
->  Если возникли проблемы с привилегиями(что странно-_-), то обратите внимание на раздел **[Решение проблем](https://github.com/Flicks1383/Demo2025_debian/tree/main?tab=readme-ov-file#решения-проблем)**
-
-### Создание локальных учетных записей
-
-- Создайте пользователя sshuser на серверах HQ-SRV и BR-SRV
-
-  - Пароль пользователя sshuser с паролем P@ssw0rd
-
-  - Идентификатор пользователя 1010
-
-  - Пользователь sshuser должен иметь возможность запускать sudo без дополнительной аутентификации.
-
-- Создайте пользователя net_admin на маршрутизаторах HQ-RTR и BR-RTR
-
-  - Пароль пользователя net_admin с паролем P@$$word
-
-  - При настройке на EcoRouter пользователь net_admin должен обладать максимальными привилегиями
-
-  - При настройке ОС на базе Linux, запускать sudo без дополнительной аутентификации
-
-<br/>
-
-<details>
-<summary><strong>[Решение]</strong></summary>
-<br/>
-
-### Создание учёток `sshuser` производится на HQ-SRV и BR-SRV
-
-**1.** Создаём sshuser следующими командами:
+Затем открываем файл настроек ufw
 ```
-useradd sshuser -u 1010
-passwd sshuser
-P@ssw0rd
+  nano /etc/ufw/before.rules
 ```
-<br/>
+ и над блоком filter пишем
+```
+*nat
+:PREROUTING ACCEPT [0:0]
+:INPUT ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
 
-**2.** Добавляем следующую строку в **`/etc/sudoers`**:
+# Port Forwardings
+-A POSTROUTING -o ens33 -j MASQUERADE
+
+COMMIT
+```
+Где,
+- nat - таблица nat трансляций, где мы разрешаем прохождение всех видов трафика
+- командой ниже мы устраиваем маскарад пакетам, проходящим через ens33(натовский) интерфейс
+От греха подальше можно разрешить прохождение вообще всем пакетам, но это вроде как может противоречить заданию в 3-ем модуле
+
+В блоке filter ниже объявления похожих правил как в блоке nat вставьте эти 4 строчки:
+```
+# Accept all traffic
+-A ufw-before-input -j ACCEPT
+-A ufw-before-output -j ACCEPT
+-A ufw-before-forward -j ACCEPT
+-A ufw-not-local -j ACCEPT
+```
+
+Затем при любом раскладе нужно выполнить
+
+## ✔️ Задание 1.3
+**Создание локальных учетных записей**
+
+**Нужно установить sudo**
+Создаем пользователя с домашней директорией и uid 1010
+```
+sudo useradd -s /bin/bash -m -u 1010 -G sudo sshuser
+```
+Далее необходимо задать пользователю пароль
+`passwd sshuser`
+Указываем `P@ssw0rd`
+
+Добавляем следующую строку`/etc/sudoers`:
 ```yml
 sshuser ALL=(ALL) NOPASSWD:ALL
 ```
 > Позволяет запускать **sudo** без аутентификации 
 
-<br/>
-
-### Пользователь `net_admin` на *HQ-RTR и BR-RTR*
-
-**1.** Создаём **`net_admin`**, следующими командами, но уже без `-u 1010` и с новым паролем:
+Аналогично net_admin на HQ-RTR и BR-RTR
 ```
-useradd net_admin
-passwd net_admin
-P@$$word
+sudo useradd -s /bin/bash -m -G sudo net_admin
 ```
+Далее необходимо задать пользователю пароль
+`passwd net_admin`
+Указываем `P@$$w0rd`
+Также добавляем в файл sudoers
+## *✔️ Задание 1.4 - VLAN, пропускаем*
 
-<br/>
-
-**2.** Добавляем следующую строку в **`/etc/sudoers`**:
-```yml
-net_admin ALL=(ALL) NOPASSWD:ALL
-```
-> Позволяет запускать **sudo** без аутентификации 
-
-<br/>
-
-</details>
-
-<br/>
-
-## ✔️ Задание 4
-
-### Настройте на интерфейсе HQ-RTR в сторону офиса HQ виртуальный коммутатор
-
-- Сервер HQ-SRV должен находиться в ID VLAN 100
-- Клиент HQ-CLI в ID VLAN 200
-- Создайте подсеть управления с ID VLAN 999
-- Основные сведения о настройке коммутатора и выбора реализации разделения на VLAN занесите в отчёт
-
-<br/>
-
-<details>
-<summary>[Решение]</summary>
-<br/>
-
-## Конфигурация VLAN на HQ-RTR
-### Первым делом необхходимо создать VLAN в утилите `nmtui`:
-
-<p align="center">
-  <img src="https://github.com/Flicks1383/Demo2025_debian/blob/main/Module1/VLAN%D0%A1%D0%BE%D0%B7%D0%B4%D0%B0%D0%BD%D0%B8%D0%B5.png" alt="" />
-</p>
-
-После чего требуется настроить его название и интерфейс (название интерфейса берете с настроек *nmtui*) а также его MAC адрес:
-
-<p align="center">
-  <img src="https://github.com/Flicks1383/Demo2025_debian/blob/main/Module1/VLAN%D0%9D%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B0.png" alt="" />
-</p>
-
-После чего аналогичным образом создаем интерфейс для клиентского компа и настраиваем его.  
-Далее переходим на сервер, создаем и переходим к конфигурации *VLAN'а*
-
-<p align="center">
-  <img src="https://github.com/Flicks1383/Demo2025_debian/blob/main/Module1/VLAN%D0%9D%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B0SRV.png" alt="" />
-</p>
-
-После чего переходим на клиентский комп и при помощи *nmtui* создаем VLAN и настраиваеи его.  
-
-<p align="center">
-  <img src="https://github.com/Flicks1383/Demo2025_debian/blob/main/Module1/VLANcli.png" alt="" />
-</p>
-
-</details>
-
-<br/>
+Можно ознакомиться вот здесь https://github.com/Flicks1383/Demo2025_debian/tree/main/Module1#%EF%B8%8F-%D0%B7%D0%B0%D0%B4%D0%B0%D0%BD%D0%B8%D0%B5-4
 
 ## ✔️ Задание 5
 
 ### Настройка безопасного удаленного доступа на серверах HQ-SRV и BR-SRV
 
-- Для подключения используйте порт 2024
-- Разрешите подключения только пользователю sshuser
-- Ограничьте количество попыток входа до двух
-- Настройте баннер «Authorized access only»
-
-<br/>
-
-<details>
-<summary><strong>[Решение]</strong></summary>
-<br/>
-
-### SSH настраиваем на HQ-SRV и BR-SRV
-
-**1.** Для настройки **SSH** необходимо его установить коммандой:
 ```
-apt-get install openssh-server
+nano /etc/ssh/sshd_config
 ```
-
-</br>
-
-**2.** После чего необходимо добавить строчки в файл **`/etc/ssh/sshd_config`**:
+Далее раскомментируем либо просто пишем: 
 ```
 Port 2024
+AllowUsers sshuser
+PermitRootLogin no
 MaxAuthTries 2
-PasswordAuthentication yes
-Banner /etc/ssh/bannermotd
-AllowUsers  sshuser
-           ^ - это TAB
+Banner /etc/ssh/banner 
 ```
-<br/>
+(предварительно разумеется надо создать и написать содержимое баннера)
 
-**3.** После чего требуется создать файл **`/etc/ssh/bannermotd`** и привести его в следующую форму:
+Далее для подключения с пингующейся машины по ssh нужно ввести:
 ```
-----------------------
-Authorized access only
-----------------------
+ssh sshuser@10.0.0.2 -p 2024
 ```
-</br>
 
-**4.** Далее необходимо перезапустить **`SSH`** коммандой:
+Далее необходимо перезапустить **`SSH`** коммандой:
   
 ```
 systemctl restart sshd
 ```
-
-
-</details>
-
-<br/>
 
 ## ✔️ Задание 6
 
@@ -270,95 +166,17 @@ systemctl restart sshd
 > [!WARNING]
 > **Не используйте** устройства с именем **`tun0`, `gre0` и `sit0`**, т.к они являются зарезервированными в iproute2 («base devices») и имеют особое поведение.
 
-> [!NOTE]
-> Для настройки **`GRE - туннеля`**, как и **`адресации`**, удобнее из-за интерфейса будет выбрать **`nmtui`**
 
 - Сведения о туннеле занесите в отчёт  
 - На выбор технологии GRE или IP in IP
-
-<br/>
-
-<details>
-<summary><strong>[Решение]</strong></summary>
-<br/>
-
-# > Конфигурация GRE туннеля <
-
-</br>
-
-- ### Настройка производится на **HQ-RTR** и **BR-RTR**
-> Адреса назначаются из одной подсети - **`это важно!`**
-
-### HQ-RTR
-
-**1.** Заходим в **`nmtui`**
-
-**2.** Выбираем справа параметр: **`"add"`** он же **`Добавить`**
-
-**3.** Выбираем пункт: **`IP-tunnel`**
-
-**4.** Задаём понятное `имя соединения`: **`«tun1»`**
-
-**5.** Задаём `устройство`: **`tun1`**
-
-**6.** `Режим работы/mode`: **`GRE`**
-
-**7.** В `родительский/parent` указываем интерфейс в сторону ISP: **`[ens256]`**
-
-**8.** Задаём «Локальный IP»: **`(IP на интерфейсе HQ-RTR в сторону IPS 172.16.4.2)`**
-
-**9.** задаём «Удалённый\Remote IP»: **`(IP на интерфейсе BR-RTR в сторону ISP 172.16.5.2)`**
-    
-  **Конфигурация IPv4: `Manual/Вручную`**
-   
-  **10.** задаём `адрес IPv4` для туннеля **`172.16.0.1/30`**
-  
-  ❗ ❗ ❗ **Для корректной работы протокола динамической маршрутизации требуется увеличить параметр `TTL` на интерфейсе туннеля**:
-
-      nmcli connection modify tun1 ip-tunnel.ttl 64
-      
-      systemctl restart networking **или** NetworkManager
-      
-<p align="center">
-  <img src="https://github.com/Flicks1383/Demo2025_debian/blob/main/Module1/iptunnel.gif" alt="" />
-</p>
-
-#
-
-### BR-RTR
-
-**1.** Заходим в **`nmtui`**
-
-**2.** Выбираем справа параметр: **`"add"`** он же **`Добавить`**
-
-**3.** Выбираем пункт: **`IP-tunnel`**
-
-**4.** Задаём понятное `имя соединения`: **`«tun1»`**
-
-**5.** Задаём `устройство`: **`tun1`**
-
-**6.** `Режим работы/mode`: **`GRE`**
-
-**7.** В `родительский/parent` указываем интерфейс в сторону ISP: **`[ens224]`**
-
-**8.** Задаём «Локальный IP»: **`(IP на интерфейсе HQ-RTR в сторону IPS 172.16.5.2)`**
-
-**9.** задаём «Удалённый\Remote IP»: **`(IP на интерфейсе BR-RTR в сторону ISP 172.16.4.2)`**
-    
-  **Конфигурация IPv4: `Manual/Вручную`**
-   
-  **10.** задаём `адрес IPv4` для туннеля **`172.16.0.2/30`**
-  
-  ❗ ❗ ❗ **Для корректной работы протокола динамической маршрутизации требуется увеличить параметр `TTL` на интерфейсе туннеля**:
-
-      nmcli connection modify tun1 ip-tunnel.ttl 64
-      
-      systemctl restart networking **или** NetworkManager
-      
-</details>
-
-<br/>
-
+Туннель на HQ-RTR
+![[tunnelhqrtr.png]]
+Туннель на BR-RTR
+![[tunnelbrrtr.png]]
+Изменяем время жизни пакета, якобы для правильной работы OSPF
+```
+nmcli connection modify tun1 ip-tunnel.ttl 64
+```
 ## ✔️ Задание 7
 
 ### Обеспечьте динамическую маршрутизацию: ресурсы одного офиса должны быть доступны из другого офиса. Для обеспечения динамической маршрутизации используйте `link state` протокол на ваше усмотрение
@@ -368,17 +186,7 @@ systemctl restart sshd
 - Обеспечьте защиту выбранного протокола посредством парольной защиты  
 - Сведения о настройке и защите протокола занесите в отчёт
 
-<br/>
-
-<details>
-<summary><strong>[Решение]</strong></summary>
-<br/>
-
-
-## Настройка `OSPF` производится HQ-RTR и BR-RTR:
-
-</br>
-
+Настройка `OSPF` производится HQ-RTR и BR-RTR:
 ### HQ-RTR
 
 **1.** Устанавливаем пакет `FRR`
@@ -408,62 +216,51 @@ systemctl enable --now frr
 vtysh
 ```
 
-**5.** Пишем команды для настройки **маршрутизации:**
+**5.** Редактируем файл frr.conf:
  
 ```
-conf t
+!
 router ospf
   passive-interface default
   router-id 1.1.1.1
-  network 172.16.0.0/30 area 0
-  network 192.168.100.0/28 area 1
-  network 192.168.200.0/26 area 2
+  network 172.16.4.0/28 area 0
+  network 10.0.0.0/26 area 0
+  network 10.0.3.0/28 area 0
   area 0 authentication
-exit
+  exit
 
 int tun1
   no ip ospf network broadcast
   no ip ospf passive
   ip ospf authentication
   ip ospf authentication-key password
-(config-if)exit
-(config)exit
-#write
+  exit
+!
 ```
-<br>
 
 ### BR-RTR
 
 **1-4.** Пункты такие же как и в HQ-RTR
 
-**5.** Пишем команды для настройки **маршрутизации:**
-
-**Меняется:** 
-
-- `id-router: 2.2.2.2`
-
-- `network 192.168.0.0/27 area 3`
-
-- `network 172.16.0.0/30 area 0`
+**5.** Редактируем файл frr.conf:
 
 ```
-conf t
+!
 router ospf 1
   passive-interface default
   router-id 2.2.2.2
-  network 192.168.0.0/27 area 0
-  network 172.16.0.0/30 area 0
+  network 172.16.5.0/28 area 0
+  network 10.0.2.0/27 area 0
   area 0 authentication
-exit
+  exit
 
 int tun1
   no ip ospf network broadcast
   no ip ospf passive
   ip ospf authentication
   ip ospf authentication-key password
-(config-if)exit
-(config)exit
-#write
+  exit
+!
 ```
 
 ### ПРОВЕРКА
@@ -478,103 +275,58 @@ vtysh
   show ip route ospf
 ```
 
-</details>
-
-<br/>
-
 ## ✔️ Задание 8
 
-### Настройка динамической трансляции адресов
-
-> [!NOTE]
-> Пул адрессов можно посмотреть в таблице <strong>[Задания 1](https://github.com/Flicks1383/Demo2025_debian/tree/main/Module1#задание-1)</strong> или же отталкиваться от вашей адрессации.
-
+Настройка динамической трансляции адресов
 - Настройте динамическую трансляцию адресов для обоих офисов.  
 - Все устройства в офисах должны иметь доступ к сети Интернет
 
-<br/>
-
-<details>
-<summary><strong>[Решение]</strong></summary>
-<br/>
-
-# > Настройка динамичесткой трансляции адресов <
-
-<br/>
-
-> ### Настройка на `ISP выполнена` в [Задании 2](https://github.com/Flicks1383/Demo09.02.06_2025/tree/main/module1#задание-2)
-
+Настройка на `ISP выполнена` в Задании 2. Сейчас я буду ссылаться на нее
 ### Настройка динамической сетевой трансляции на `HQ-RTR`
+В том же блоке nat указываем
 ```
-apt-get install iptables iptables-persistent –y
-iptables –t nat –A POSTROUTING –s 192.168.100.0/26 –o ens256 –j MASQUERADE
-iptables –t nat –A POSTROUTING –s 192.168.200.0/28 –o ens256 –j MASQUERADE
-netfilter-persistent save
-systemctl restart netfilter-persistent  
+# Port Forwardings
+–A POSTROUTING –s 10.0.0.0/26 –o ens37 –j MASQUERADE
+–A POSTROUTING –s 10.0.3.0/28 –o ens37 –j MASQUERADE  
 ```
+Не забываем про волшебные 4 строчки, которые разрешают прохождение всему трафику
 ### Настройка динамической сетевой трансляции на `BR-RTR`
 
 ```
-apt-get install iptables iptables-persistent –y
-iptables –t nat –A POSTROUTING –s 192.168.0.0/27 –o ens224 –j MASQUERADE
-netfilter-persistent save
-systemctl restart netfilter-persistent  
+# Port Forwardings
+–A POSTROUTING –s 10.0.2.0/27 –o ens37 –j MASQUERADE  
 ```
 
-</br>
-
-</details>
-
-</br>
-
+Также не забываем про волшебные 4 строчки, которые разрешают прохождение всему трафику
 ## ✔️ Задание 9
 
 ### Настройка протокола динамической конфигурации хостов
 
-- Настройте нужную подсеть  
-- Для офиса HQ в качестве сервера DHCP выступает маршрутизатор HQ-RTR.  
-- Клиентом является машина HQ-CLI.  
-- Исключите из выдачи адрес маршрутизатора  
-- Адрес шлюза по умолчанию – адрес маршрутизатора HQ-RTR.  
-- Адрес DNS-сервера для машины HQ-CLI – адрес сервера HQ-SRV.  
-- DNS-суффикс для офисов HQ – au-team.irpo  
-- Сведения о настройке протокола занесите в отчёт
-
-<br/>
-
-<details>
-<summary><strong>[Решение]</strong></summary>
-<br/>
-
-# > Настройка динамической конфигурации хостов <
-
-<br/>
+Настройка динамической конфигурации хостов
 
 **1.** Устанавливаем сам **DHCP-сервер**:  
 ```
 apt install isc-dhcp-server
 ```
-<br/>
 
 **2.** После чего переходим в конфигурацию файла `/etc/dhcp/dhcpd.conf` и добавляем следующие строчки:
 ```
-subnet 192.168.200.0 netmask 255.255.255.240 {
-  range 192.168.200.2 192.168.200.14;
-  option domain-name-servers 192.168.100.62;
-  option domain-name "au-team.irpo";
-  option routers 192.168.200.1;
-  default-lease-time 600;
-  max-lease-time 7200;
+option domain-name "hq-rtr.au-team.irpo";
+option domain-name-servers 10.0.0.2, 192.168.132.2;
+
+default-lease-time 6000;
+max-lease-time 72000;
+
+subnet 10.0.3.0 netmask 255.255.255.240 {
+  range 10.0.3.3 10.0.3.3;
+  option routers 10.0.3.1;
 }
 ```
-<br/>
 
 **3.** После чего переходим в конфигурацию файла `/etc/default/isc-dhcp-server` и меняем ее добалвяя данный текст:
 ```
-INTERFACESv4="ens161.200" - порт смотрящий в сторону CLI
+INTERFACESv4="ens39" - порт смотрящий в сторону CLI
 ```
-
-<br/>
 
 **4.** Включаем сервиc **`DHCP`** и добавим в автозагрузку на **`HQ-RTR`**:
 ```
@@ -582,12 +334,7 @@ systemctl start isc-dhcp-server
 systemctl enable isc-dhcp-server
 ```
 
-**5.** Далее на клиенсткой машине необходимо в настройках адаптера выбрать **DHCP** и проверить работоспособность
-<br/>
-
-</details>
-
-</br>
+**5.** Далее на клиентской машине необходимо в настройках адаптера выбрать **DHCP** и проверить работоспособность
 
 ## ✔️ Задание 10
 
@@ -595,8 +342,6 @@ systemctl enable isc-dhcp-server
 - Основной DNS-сервер реализован на HQ-SRV.  
 - Сервер должен обеспечивать разрешение имён в сетевые адреса устройств и обратно в соответствии с таблицей 2  
 - В качестве DNS сервера пересылки используйте любой общедоступный DNS сервер  
-
-<br/>
 
 <table align="center">
   <tr>
@@ -641,236 +386,159 @@ systemctl enable isc-dhcp-server
   </tr>
 </table>
 
-<p align="center"><strong>Таблица 2</strong></p>
 
-<br/>
-
-<details>
-<summary><strong>[Решение]</strong></summary>
-
-  <br/>
-
-# > Настройка DNS <
+Настройка DNS
 ### Основной DNS-сервер реализован на `HQ-SRV`
-<br/>
 
 ### HQ-SRV
-
- <br/>
 
 **1.** Для работы с **DNS** требуется установить **`bind`** и доп. пакет командой:
 
 ```
 apt-get install bind9 bind9-utils
 ```
-<br/>
 
 **2.** Далее необходимо сконфигурировать файл **`/etc/bind/named.conf.option`** таким образом:
 
 ```
-listen-on { 127.0.0.1; 192.168.100.0/26; 192.168.200.0/28; 192.168.0.0/27; };
-forwarders { 77.88.8.8; };
-recursion yes;
-allow-query { 127.0.0.1; 192.168.100.0/26; 192.168.200.0/28; 192.168.0.0/27; };
-allow-query-cache { 127.0.0.1; 192.168.100.0/26; 192.168.200.0/28; 192.168.0.0/27; };
-allow-recursion { 127.0.0.1; 192.168.100.0/26; 192.168.200.0/28; 192.168.0.0/27; };
-dnssec-validation no;
-```
-  <br/>
+acl my_net {
+        172.16.5.0/28;
+        172.16.4.0/28;
+        192.168.0.0/24;
+        10.0.2.0/27;
+        10.0.0.0/26;
+        10.0.3.0/28;
+};
+options {
 
-**3.** Конфигурация ключей **`rndc`**:
+        directory "/var/cache/bind";
+        recursion yes;
+        allow-recursion { my_net; };
+        
+	    forwarders {
+                8.8.8.8;
+         };
+    };
 ```
-rndc-confgen > /etc/rndc.key 
-```
-</br>
 
-**❗ Для проверки, можно использовать комманду:** 
-
-```
-named-checkconf
-```
-</br>
-
-**4.** Далее необходимо запустить **утилиту** коммандой:
-```
-systemctl enable --now named
-```
-</br>
-
-**5.** Далее требуется изменить конфигурацию файла **`/etc/resolv.conf`**:
+**3.** Далее требуется изменить конфигурацию файла **`/etc/resolv.conf`**:
 
 ```
 search au-team.irpo
-nameserver 127.0.0.1
-nameserver 192.168.100.62
-nameserver 77.88.8.8
-search yandex.ru
+nameserver 10.0.0.2
+search localdomain
+nameserver 192.168.132.2
 ```
-</br>
 
-**6.** После чего требуется прописать в **`/etc/bind/named.conf.local`**:
+**4.** После чего требуется прописать в **`/etc/bind/named.conf.local`**:
 
 ```
 zone "au-team.irpo" {
-  type master;
-  file "/etc/bind/au-team.irpo.db";
+        type master;
+        file "/etc/bind/zones/db.au-team.irpo";
 };
 
-zone "100.168.192.in-addr.arpa" {
-  type master;
-  file "/etc/bind/100.168.192.in-addr.arpa";
+zone "0.0.10.in-addr.arpa" {
+        type master;
+        file "/etc/bind/zones/db.10";
 };
 
-zone "200.168.192.in-addr.arpa" {
-  type master;
-  file "/etc/bind/200.168.192.in-addr.arpa";
-};
-
-zone "0.168.192.in-addr.arpa" {
-  type master;
-  file "/etc/bind/0.168.192.in-addr.arpa";
+zone "3.0.10.in-addr.arpa" {
+        type master;
+        file "/etc/bind/zones/db.10.3";
 };
 ```
-</br>
 
-**7.** Далее следующими командами **создаём копию** файла и присваиваем права:
 
-```
-cp /etc/bind/db.local /etc/bind/au-team.irpo
-```
-
-</br>
-
-**8.** После чего приводим **файл `/etc/bind/au-team.irpo`** к следующему виду:
+**5.** Далее следующими командами **создаём копию** файла и присваиваем права:
 
 ```
-$TTL    1D
+cp /etc/bind/db.local /etc/bind/zones/db.au-team.irpo
+```
+
+
+**6.** После чего приводим **файл `/etc/bind/zones/db.au-team.irpo`** к следующему виду:
+
+```
+$TTL    86400
 @       IN      SOA     au-team.irpo. root.au-team.irpo. (
-                                2024102200      ; serial
-                                12H             ; refresh
-                                1H              ; retry
-                                1W              ; expire
-                                1H              ; ncache
-                        )
-        IN      NS      au-team.irpo.
-        IN      A       192.168.100.62
-hq-rtr  IN      A       192.168.100.1
-br-rtr  IN      A       192.168.0.1
-hq-srv  IN      A       192.168.100.62
-hq-cli  IN      A       192.168.200.2
-br-srv  IN      A       192.168.0.2
-moodle  IN      CNAME   hq-rtr
-wiki    IN      CNAME   hq-rtr
+                              2         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                          86400 )       ; Negative Cache TTL
+;
+@       IN      NS      au-team.irpo.
+@       IN      A       10.0.0.2
+hq-srv.au-team.irpo.    IN      A       10.0.0.2
+hq-rtr.au-team.irpo.    IN      A       10.0.0.1
+hq-cli.au-team.irpo.    IN      A       10.0.3.3
+br-rtr.au-team.irpo.    IN      A       10.0.2.1
+br-srv.au-team.irpo.    IN      A       10.0.2.2
+moodle.au-team.irpo.    IN      CNAME   hq-rtr.au-team.irpo.
+wiki.au-team.irpo.      IN      CNAME   hq-rtr.au-team.irpo.
 ```
-</br>
 
-</br>
-
-**9.** После чего **создаем файлы** командами:
+**7.** После чего **создаем файлы** командами:
 ```
-cp /etc/bind/db.127 /etc/bind/100.168.192.in-addr.arpa
-cp /etc/bind/db.127 /etc/bind/200.168.192.in-addr.arpa
-cp /etc/bind/db.127 /etc/bind/0.168.192.in-addr.arpa
+cp /etc/bind/db.127 /etc/bind/zones/db.10
+cp /etc/bind/db.127 /etc/bind/zones/db.10.3
 ```
-</br>
 
-</br>
-
-**10.** После изменений файл **`100.168.192.in-addr.arpa`** выглядит так:
+**8.** После изменений файл **`db.10`** выглядит так:
 ```
-$TTL    1D
+$TTL    604800
 @       IN      SOA     au-team.irpo. root.au-team.irpo. (
-                                2024102200      ; Serial
-                                12H             ; Refresh
-                                1H              ; Retry
-                                1W              ; Expire
-                                1H              ; Ncache
-                        )
-        IN      NS      localhost.
+                              2         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      au-team.irpo.
 1       IN      PTR     hq-rtr.au-team.irpo.
-62      IN      PTR     hq-srv.au-team.irpo.
+2       IN      PTR     hq-srv.au-team.irpo.
 ```
 
-</br>
 
-**11.** После изменений файл **`200.168.192.in-addr.arpa`** выглядит так:
+**9.** После изменений файл **`db.10.3`** выглядит так:
 ```
-$TTL    1D
+$TTL    604800
 @       IN      SOA     au-team.irpo. root.au-team.irpo. (
-                                2024102200      ; Serial
-                                12H             ; Refresh
-                                1H              ; Retry
-                                1W              ; Expire
-                                1H              ; Ncache
-                        )
-        IN      NS      localhost.
-14      IN      PTR     hq-cli.au-team.irpo.
+                              2         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      au-team.irpo.
+3       IN      PTR     hq-cli.au-team.irpo.
 ```
-
-</br>
-
-**12.** После изменений файл **`0.168.192.in-addr.arpa`** выглядит так:
-```
-$TTL    1D
-@       IN      SOA     au-team.irpo. root.au-team.irpo. (
-                                2024102200      ; Serial
-                                12H             ; Refresh
-                                1H              ; Retry
-                                1W              ; Expire
-                                1H              ; Ncache
-                        )
-        IN      NS      localhost.
-1       IN      PTR     br-rtr.au-team.irpo.
-2       IN      PTR     br-srv.au-team.irpo.
-```
-
 ### ❗ ❗ ❗ Все пробелы выше ^ ставятся TAB'ом
 
-</br>
 
-</br>
-
-**13.** После чего можно проверить **ошибки** командой:
+**10.** После чего можно проверить **ошибки** командой:
 ```
 named-checkconf -z
 ```
-</br>
 
-**14.** А также перезапускаем **`bind`** командой:
+**11.** А также перезапускаем **`bind`** командой:
 
 ```
 systemctl restart named bind9
 ```
-</br>
 
-**15.** Проверить работоспособность можно **командой**:
+**12.** Проверить работоспособность можно **командой**:
 ```
 nslookup **IP-адрес/DNS-имя**
 ```
-</br>
 
-</details>
-
-<br/>
 
 ## ✔️ Задание 11
 
 ### Настройте часовой пояс на всех устройствах, согласно месту проведения экзамена
 
-<br/>
-
-<details>
-<summary>[Решение]</summary>
-<br/>
-
-# > Настройте часовой пояс на всех устройствах <
 - На Linux настраивается часовой пояс командой
 ```
-timedatectl set-timezone Asia/Tomsk
-```  
-- На EcoRouter настраивается часовой пояс командой
+timedatectl set-timezone Europe/Moscow
 ```
-ntp timezone utc+7
-```
-
-</details>
