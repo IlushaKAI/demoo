@@ -779,5 +779,5 @@ systemctl restart nginx
 ```
 # sudo apt-get install yandex-browser-stable
 ```
-
+У нас команда не сработала
 </details>
