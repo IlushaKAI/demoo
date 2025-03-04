@@ -56,6 +56,7 @@ net_admin    ALL=(ALL:ALL)    NOPASSWD: ALL
 
 <br/>
 от лица sshuser создаем файл `/etc/ansible/backup_network.yml` и в нем пишем
+
 ```
 - name: Резервное копирование конфигурации роутеров
   hosts:
@@ -87,15 +88,17 @@ net_admin    ALL=(ALL:ALL)    NOPASSWD: ALL
         content: "{{ ip_output.stdout }}"
         dest: "/etc/ansible/NETWORK_INFO/{{ inventory_hostname }}_ip_a.txt"
       delegate_to: localhost
-
 ```
 
-Также не забываем самостоятельно заранее создать директорию 
+<br/>
+Также не забываем самостоятельно заранее создать директорию
+
 ```
 mkdir /etc/ansible/NETWORK_INFO
 ```
 
 Запускаем задачу инвентаризации командой:
+
 ```
 ansible-playbook -i /etc/ansible/demo /etc/ansible/backup_network.yml
 ```
