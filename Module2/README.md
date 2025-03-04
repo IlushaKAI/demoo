@@ -13,21 +13,27 @@
 </p>
 При необходимости перезагружаем машину
 Шаблон команды настройки массива для наглядности
+
 ```
 mdadm --create /dev/<название массива> --level=<Версия RAID> --raid-devices=<Количество устройств для массива> /dev/<Диск 1> ... /dev/<Диск n>
 ```
 
 В нашем случае команда имеет вид
+
 `/sbin/mdadm --create /dev/md0 --level=5 --raid-devices=3 /dev/sdb /dev/sdc /dev/sdd`
 
 Создайте раздел, отформатируйте раздел, в качестве файловой системы используйте ext4
+
 `sudo mkfs -t ext4 /dev/md0`
 
 Имя устройства – md0, конфигурация массива размещается в файле /etc/mdadm.conf
+
 `/sbin/mdadm --detail --scan >> /etc/mdadm.conf`
 
 Обеспечьте автоматическое монтирование в папку /raid5 
+
 `mkdir /mnt/raid5`
+
 в файле /etc/fstab пишем(пробелы это tab)
 ```
 /dev/md0        /mnt/raid5      ext4    defaults        0       0
@@ -169,10 +175,6 @@ systemctl enable --now  chrony
 ```
 
 <br/>
-После перезагружаем сервис и добавляем в автозагрузку:
-`systemctl restart chrony`
-
-`systemctl enable --now  chrony`
 
 Настройка на HQ-SRV HQ-CLI BR-RTR BR-SRV(на всех аналогично):
 Устанавливаем chrony:
