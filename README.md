@@ -5,3 +5,4 @@
 ## Удачи желают неудачникам, а нам успехов
 
 Тетрадь Артема https://docs.google.com/document/d/1VtoFYLAIv_5UeD5Anhyr0g0LdJsucs1lgvwa0KN33tM/edit?usp=sharing
+Тетрадь Эвелины https://docs.google.com/document/d/1lWKpzl5JyxeMzIZHOqsv1krAQ9oCjy2yU4sp_YWNpqw/edit?usp=sharing

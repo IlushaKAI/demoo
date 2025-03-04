@@ -26,14 +26,14 @@
 <br>
 перед установкой желательно выполнить apt-get update
 
-| Устройство | Пакеты                                                                                                              |
-| ---------- | ------------------------------------------------------------------------------------------------------------------- |
-| ISP        | `apt-get install network-manager ufw frr ssh -y`                                                                    |
-| HQ-RTR     | `apt-get install network-manager sudo ufw ssh frr isc-dhcp-server chrony nginx -y`                                  |
-| HQ-SRV     | `apt-get install openssh-server ssh bind9 bind9-utils chrony nfs-server cups-server cups-pdf prometheus rsyslog -y` |
-| HQ-CLI     | `apt-get install chrony ssh nfs-client cups-client -y`                                                              |
-| BR-RTR     | `apt-get install network-manager sudo ssh ufw frr chrony -y`                                                        |
-| BR-SRV     | `apt-get install openssh-server ssh chrony docker docker-compose docker-doc ansible samba -y`                       |
+| Устройство | Пакеты                                                                                         |
+| ---------- | ---------------------------------------------------------------------------------------------- |
+| ISP        | `apt-get install network-manager ufw frr ssh -y`                                               |
+| HQ-RTR     | `apt-get install network-manager sudo ufw ssh frr isc-dhcp-server chrony nginx -y`             |
+| HQ-SRV     | `apt-get install openssh-server ssh bind9 bind9-utils chrony nfs-server prometheus rsyslog -y` |
+| HQ-CLI     | `apt-get install chrony ssh nfs-client cups-client -y`                                         |
+| BR-RTR     | `apt-get install network-manager sudo ssh ufw frr chrony -y`                                   |
+| BR-SRV     | `apt-get install openssh-server ssh chrony docker docker-compose docker-doc ansible samba -y`  |
 
 ## ✔️ 1.1
 ### Произведите базовую настройку устройств
@@ -54,6 +54,7 @@ P.S. чтобы настройки вступили в силу необходи
 ## ✔️ Задание 1.2
 
 ### Настройка ISP
+**На HQ-RTR и BR-RTR крайне желательно тоже сразу правильно настроить ufw**
 *Все остальные пункты по сути сделали в первом задании*
   - На ISP настройте динамическую сетевую трансляцию в сторону HQ-RTR и BR-RTR для доступа к сети Интернет
   Для начала на всякий случай сбросим все настройки ufw
@@ -74,7 +75,7 @@ ufw default allow outgoing
   nano /etc/ufw/before.rules
 ```
  и над блоком filter пишем
-```
+```shell
 *nat
 :PREROUTING ACCEPT [0:0]
 :INPUT ACCEPT [0:0]
@@ -92,7 +93,7 @@ COMMIT
 От греха подальше можно разрешить прохождение вообще всем пакетам, но это вроде как может противоречить заданию в 3-ем модуле
 
 В блоке filter ниже объявления похожих правил как в блоке nat вставьте эти 4 строчки:
-```
+```shell
 # Accept all traffic
 -A ufw-before-input -j ACCEPT
 -A ufw-before-output -j ACCEPT
@@ -285,7 +286,33 @@ vtysh
   show ip ospf neighbor
   show ip route ospf
 ```
-
+На этом этапе если у вас что то не пингуется, то желательно бросить настройку этого frr и просто пробросить статические маршруты через nmtui на **ISP** примерно следующим образом:
+<br/>
+На интерфейсе смотрящем на HQ-RTR(172.16.4.1)
+```shell
+network          next-hop
+10.0.0.0/26      172.16.4.2 
+10.0.3.0/28      172.16.4.2
+```
+На интерфейсе смотрящем на BR-RTR(172.16.4.2)
+```shell
+network          next-hop
+10.0.2.0/27      172.16.5.2 
+```
+Также на всякий случай можно пробросить маршруты на 
+<br/>
+HQ-RTR на интерфейсе смотрящем на ISP(172.16.4.2)
+```shell
+network          next-hop
+10.0.2.0/27      172.16.4.1 
+```
+BR-RTR на интерфейсе смотрящем на ISP(172.16.5.2)
+```shell
+network          next-hop
+10.0.0.0/26      172.16.5.1 
+10.0.3.0/28      172.16.5.1 
+```
+И затем перезагрузить все машины и молиться
 ## ✔️ Задание 8
 
 Настройка динамической трансляции адресов
