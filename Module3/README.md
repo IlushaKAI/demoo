@@ -1,3 +1,4 @@
+tags: [[demo]]
 ## Задание 5
 Настройте принт-сервер cups на сервере HQ-SRV.
 - Опубликуйте виртуальный pdf-принтер
@@ -10,13 +11,13 @@ https://github.com/NyashMan/DEMO2024/blob/main/README.md#%D1%80%D0%B0%D1%81%D0%B
 ## Задание 8
 Реализуйте механизм инвентаризации машин HQ-SRV и HQ-CLI через Ansible на BR-SRV:
 Перед выполнение этого задания, проверьте, что вы можете без проблем поиграть в пинг-понг от лица `sshuser` с необходимыми машинами. Это мы настраиваем в 4-ом задании 2-ого модуля
-```
+```bash
 ansible all -i /etc/ansible/demo -m ping
 ```
 В случае неудачной партии с необходимыми машинами проверьте настройку того задания
 <br/>
 от лица sshuser создаем файл `/etc/ansible/inventory_pc.yml` и в нем пишем
-```
+```yml
 - name: Инвентаризация рабочих станций HQ-SRV и HQ-CLI
   hosts:
     - 10.0.0.2
@@ -34,12 +35,12 @@ ansible all -i /etc/ansible/demo -m ping
 ```
 
 Также не забываем самостоятельно заранее создать директорию 
-```
+```bash
 mkdir /etc/ansible/PC_INFO
 ```
 
 Запускаем задачу инвентаризации командой:
-```
+```shell
 ansible-playbook -i /etc/ansible/demo /etc/ansible/inventory_pc.yml
 ```
 
@@ -57,7 +58,7 @@ net_admin    ALL=(ALL:ALL)    NOPASSWD: ALL
 <br/>
 от лица sshuser создаем файл `/etc/ansible/backup_network.yml` и в нем пишем
 
-```
+```yml
 - name: Резервное копирование конфигурации роутеров
   hosts:
     - 172.16.4.2
@@ -90,15 +91,16 @@ net_admin    ALL=(ALL:ALL)    NOPASSWD: ALL
       delegate_to: localhost
 ```
 
-<br/>
+
+
 Также не забываем самостоятельно заранее создать директорию
 
-```
+```bash
 mkdir /etc/ansible/NETWORK_INFO
 ```
 
 Запускаем задачу инвентаризации командой:
 
-```
+```bash
 ansible-playbook -i /etc/ansible/demo /etc/ansible/backup_network.yml
 ```

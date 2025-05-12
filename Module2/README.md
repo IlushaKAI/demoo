@@ -1,4 +1,4 @@
-
+tags: [[demo]]
 ## ✔️ Задание 2
 
 ### Сконфигурируйте файловое хранилище
@@ -314,7 +314,7 @@ nano /etc/ansible/demo
 - `ansible_port` - Номер порта ssh, если не 22
 - `ansible_user` - Использовать имя пользователя ssh по умолчанию.
 
-<br/>
+
 
 ### Запуск команд с пользовательским инвентарем (ping-pong)
 
@@ -326,7 +326,7 @@ ansible all -i /etc/ansible/demo -m ping
 
 **!!! Может появиться предупреждение про обнаружение интерпретатора Python, на целевом хосте**
 
-<br/>
+
 
 **2.** Для управления поведением обнаружения в глобальном масштабе необходимо в файле конфигурации **`ansible /etc/ansible/ansible.cfg`** в разделе **`[defaults]`** прописать ключ **`interpreter_python`** с параметром **`auto_silent`**. В большинстве дистрибутивов прописываем вручную.
 ```
@@ -335,13 +335,13 @@ nano /etc/ansible/ansible.cfg
 [defaults]
 interpreter_python=auto_silent
 ```
-<br/>
+
 
 **3.** Запускаем команду `ping` на всех хостах:
 ```
 ansible all -i /etc/ansible/demo -m ping
 ```
-<br/>
+
 
 ## ✔️ Задание 5
 
@@ -365,7 +365,7 @@ ansible all -i /etc/ansible/demo -m ping
 
 - MediaWiki должна быть доступна извне через порт 8080
 
-<br/>
+
 
 ### Установка Wiki (на BR-SRV)
 От sshuser
@@ -388,26 +388,25 @@ systemctl status docker
 docker info
 ```
 
-</br>
+
 
 **5.**  При помощи `CLI` заходим в **YandexBrowser**:
 
 копируем конфиг, отсюда https://www.mediawiki.org/wiki/Docker/Hub#Adding_a_Database_Server
 
-</br>
+
+
 
 **6.** В домашней директории пользователя root создаем композер-файл **wiki.yaml**:
 ```
 nano wiki.yaml
 ```
 
-</br>
+
 
 **8.** Копируем и вставляем содержимое c сайта в **wiki.yml**:
 
  <img src="phplocalconfigwiki.png" alt="Конфиг" width="400" height="400" />
-
-</br>
 
 
 **9.** Чтобы отдельный **volume** для хранения базы данных **имел правильное имя** - создаём его средствами **docker**:
@@ -419,35 +418,38 @@ sudo docker volume create dbvolume
 ```
 sudo docker volume ls
 ```
-</br>
+
+
 
 **10.** Выполняем сборку и запуск стека контейнеров с приложением **MediaWiki** и базой данных описанных в файле **wiki.yml**:
 ```
 sudo docker-compose -f wiki.yaml up -d
 ```
-</br>
+
 
 ### Настройка Wiki через WEB-интерфейс:
 
 **1.** Переходим на `HQ-CLI` в браузере по адресу **http://10.0.2.2:8080** (айпишник BR-SRV:8080):
 - Для продолжения установки через **WEB-интерфейс** - нажимаем **`set up the wiki`**
  
-  </br>
+
+
 
 **2.** Выбираем необходимый Язык - жмем **Далее**, проходим проверку внешней среды и так-же нажимаем **далее**:
-</br>
+
+
 
 **3.** Заполняем параметры подключение к **БД** в соответствие с заданными переменными окружения в **wiki.yml**, которые соответствуют заданию:
 
  ![image](wiki.png)
 
-</br>
+
 
 ---
 
 **4.** Ставим галочку и жмем **Далее**:
 
-</br>
+
 
 ---
 
@@ -455,13 +457,14 @@ sudo docker-compose -f wiki.yaml up -d
 
 ![image](wiki2.png)
 
-</br>
+
 
 **6.** Будет автоматически скачен файл **`LocalSettings.php`** - который необходимо передать в директорию **`/home/sshuser`** туда же где лежит **`wiki.yaml`**:
 ```
 mv /home/sshuser/Загрузки/LocalSettings.php /home/sshuser/
 ```
-</br>
+
+
 
 **7.** Раскомментируем строку в файле **`wiki.yaml`** :
 ```
@@ -471,7 +474,6 @@ nano /home/sshuser/wiki.yaml
   <img src="phplocalconfigwiki.png" alt="phpwiki" />
 </p>
 
-</br>
 
 **8.** Перезапускаем сервисы средствами **`docker-compose`**:
 ```
@@ -479,7 +481,8 @@ docker-compose -f wiki.yaml stop
 
 docker-compose -f wiki.yaml up -d
 ```
-</br>
+
+
 
 **9.** Проверяем доступ к Wiki **`http://10.0.2.2:8080`**
 
@@ -489,7 +492,6 @@ docker-compose -f wiki.yaml up -d
 
 - `Пароль`: WikiP@ssw0rd
 
-</br>
 
 
 ## ✔️ Задание 6 (Тестируется)

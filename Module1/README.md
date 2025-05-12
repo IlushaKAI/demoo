@@ -1,3 +1,4 @@
+tags: [[demo]]
 ## Начало
 ### Топология
 
@@ -6,20 +7,22 @@
 </p>
 ### Таблица адресации
 
-| Имя устройства      | IPv4                              | Сегмент |
-| ------------------- | --------------------------------- | ------- |
-| isp.au-team.irpo    | NAT                               | NAT     |
-|                     | 172.16.4.1/28 255.255.255.0       | HQ-RTR  |
-|                     | 172.16.5.1/28 255.255.255.0       | BR-RTR  |
-| hq-rtr.au-team.irpo | 172.16.4.2/28 255.255.255.240     | HQ-RTR  |
-|                     | 10.0.0.1/26 255.255.255.192       | HQ-SRV  |
-|                     | 10.0.3.1/28 255.255.255.240       | HQ-CLI  |
-| hq-srv.au-team.irpo | 10.0.0.2/26 255.255.255.192       | HQ-SRV  |
-| br-rtr.au-team.irpo | 172.16.5.2/28 255.255.255.224     | BR-RTR  |
-|                     | 10.0.2.1/27 255.255.255.240       | BR-SRV  |
-| br-srv.au-team.irpo | 10.0.2.2/27 255.255.255.240       | BR-SRV  |
-| hq-cli.au-team.irpo | 10.0.3.3/28 255.255.255.240(DHCP) | HQ-CLI  |
-|                     |                                   |         |
+| Имя устройства      | inerface  | IPv4                               | Сегмент            |
+| ------------------- | --------- | ---------------------------------- | ------------------ |
+| isp.au-team.irpo    | ens33     | NAT                                | NAT                |
+|                     |           | 172.16.4.1/28 255.255.255.0        | HQ-RTR             |
+|                     |           | 172.16.5.1/28 255.255.255.0        | BR-RTR             |
+| hq-rtr.au-team.irpo |           | 172.16.4.2/28 255.255.255.240      | HQ-RTR             |
+|                     | ens37     | 10.0.0.1/26 255.255.255.192        | HQ                 |
+|                     |           | 10.0.3.1/28 255.255.255.240        | HQ                 |
+|                     | ens37.100 | 10.0.0.10/26 255.255.255.192       | не сегмент, а vlan |
+|                     | ens38.200 | 10.0.3.2/28 255.255.255.240        | не сегмент, а vlan |
+| hq-srv.au-team.irpo |           | 10.0.0.2/26 255.255.255.192        | HQ                 |
+| br-rtr.au-team.irpo |           | 172.16.5.2/28 255.255.255.224      | BR-RTR             |
+|                     |           | 10.0.2.1/27 255.255.255.240        | BR-SRV             |
+| br-srv.au-team.irpo |           | 10.0.2.2/27 255.255.255.240        | BR-SRV             |
+| hq-cli.au-team.irpo |           | 10.0.0.22/28 255.255.255.240(DHCP) | HQ                 |
+|                     |           |                                    |                    |
 
 ### Необходимые пакеты для установки
 **Установите пакеты пока у вас на всех машинах рабочий NAT!**
@@ -29,7 +32,7 @@
 | Устройство | Пакеты                                                                                         |
 | ---------- | ---------------------------------------------------------------------------------------------- |
 | ISP        | `apt-get install network-manager ufw frr ssh -y`                                               |
-| HQ-RTR     | `apt-get install network-manager sudo ufw ssh frr isc-dhcp-server chrony nginx -y`             |
+| HQ-RTR     | `apt-get install network-manager sudo ufw ssh frr isc-dhcp-server chrony nginx vlan -y`        |
 | HQ-SRV     | `apt-get install openssh-server ssh bind9 bind9-utils chrony nfs-server prometheus rsyslog -y` |
 | HQ-CLI     | `apt-get install chrony ssh nfs-client cups-client -y`                                         |
 | BR-RTR     | `apt-get install network-manager sudo ssh ufw frr chrony -y`                                   |
@@ -42,10 +45,9 @@
 
 1.1 Произведите базовую настройку устройств. 
 P.S. чтобы настройки вступили в силу необходимо деактивировать/активировать соединение в nmtui. Если `device strictly unmanaged` нужно удалить упоминание(либо просто закомментировать) этого интерфейса в `/etc/network/interfaces`.
+P.S Чтобы убрать баг, в котором у вас одно соединение(connection) предлагается для нескольких интерфейсов, нужно в поле device четко прописать имя интерфейса(mac адрес необязательно)
 
-<p align="center">
-  <img src="примернастройки.png" alt="Топология" />
-</p>
+![|518x365](./примернастройки.png)
 
 Обязательно лан-адаптеры ставим в режим Manual и ставим галочку в одном из пунктов
 
@@ -58,24 +60,24 @@ P.S. чтобы настройки вступили в силу необходи
 *Все остальные пункты по сути сделали в первом задании*
   - На ISP настройте динамическую сетевую трансляцию в сторону HQ-RTR и BR-RTR для доступа к сети Интернет
   Для начала на всякий случай сбросим все настройки ufw
-```
+```bash
 ufw reset  
 ```
 Затем разрешим все приходящие пакеты
-```
+```bash
 ufw default allow incoming
 ```
 И исходящие
-```
+```bash
 ufw default allow outgoing
 ```
 
 Затем открываем файл настроек ufw
-```
-  nano /etc/ufw/before.rules
+```bash
+nano /etc/ufw/before.rules
 ```
  и над блоком filter пишем
-```shell
+```bash
 *nat
 :PREROUTING ACCEPT [0:0]
 :INPUT ACCEPT [0:0]
@@ -93,7 +95,7 @@ COMMIT
 От греха подальше можно разрешить прохождение вообще всем пакетам, но это вроде как может противоречить заданию в 3-ем модуле
 
 В блоке filter ниже объявления похожих правил как в блоке nat вставьте эти 4 строчки:
-```shell
+```bash
 # Accept all traffic
 -A ufw-before-input -j ACCEPT
 -A ufw-before-output -j ACCEPT
@@ -102,11 +104,11 @@ COMMIT
 ```
 
 Затем при любом раскладе нужно выполнить
-```
+```bash
 ufw disable
 ```
 
-```
+```bash
 ufw enable
 ```
 ## ✔️ Задание 1.3
@@ -114,7 +116,7 @@ ufw enable
 
 **Нужно установить sudo**
 Создаем пользователя с домашней директорией и uid 1010
-```
+```bash
 sudo useradd -s /bin/bash -m -u 1010 -G sudo sshuser
 ```
 Далее необходимо задать пользователю пароль
@@ -122,22 +124,30 @@ sudo useradd -s /bin/bash -m -u 1010 -G sudo sshuser
 Указываем `P@ssw0rd`
 
 Добавляем следующую строку`/etc/sudoers`:
-```yml
+```bash
 sshuser ALL=(ALL) NOPASSWD:ALL
 ```
-> Позволяет запускать **sudo** без аутентификации 
+
+Позволяет запускать **sudo** без аутентификации 
 
 Аналогично net_admin на HQ-RTR и BR-RTR
-```
+```bash
 sudo useradd -s /bin/bash -m -G sudo net_admin
 ```
 Далее необходимо задать пользователю пароль
 `passwd net_admin`
 Указываем `P@$$w0rd`
 Также добавляем в файл sudoers
-## *✔️ Задание 1.4 - VLAN, пропускаем*
+## ✔️ Задание 1.4 - VLAN
 
 Можно ознакомиться вот здесь https://github.com/Flicks1383/Demo2025_debian/tree/main/Module1#%EF%B8%8F-%D0%B7%D0%B0%D0%B4%D0%B0%D0%BD%D0%B8%D0%B5-4
+
+в nmtui просто добавляем 2 vlan интерфейса
+добавление интерфейса для vlan 100
+![|500x358](./README-1747046117869.png)
+
+добавление интерфейса для vlan 200
+![|485x352](./README-1747046188573.png)
 
 ## ✔️ Задание 5
 
@@ -186,7 +196,7 @@ ssh sshuser@10.0.0.2 -p 2024
 </p>
 Изменяем время жизни пакета, якобы для правильной работы OSPF
 
-```
+```bash
 nmcli connection modify tun1 ip-tunnel.ttl 64
 ```
 ## ✔️ Задание 7
@@ -203,13 +213,13 @@ nmcli connection modify tun1 ip-tunnel.ttl 64
 
 **1.** Устанавливаем пакет `FRR`
 
-```
+```bash
 sudo apt install -y frr
 ```
 
 **2.** В конфигурационном файле `/etc/frr/daemons` необходимо активировать выбранный протокол `OSPF` для дальнейшей реализации его настройки:
 
-```
+```bash
 nano /etc/frr/daemons
 
 !!! Ищем следующую строку и меняем с (no) на (yes)
@@ -219,7 +229,7 @@ ospfd = yes
 
 **3.** Далее включаем и добавляем в автозагрузку службу **`FRR`**
 
-```
+```bash
 systemctl enable --now frr
 ```
 
@@ -230,7 +240,7 @@ vtysh
 
 **5.** Редактируем файл frr.conf:
  
-```
+```bash
 !
 router ospf
   passive-interface default
@@ -343,12 +353,12 @@ network          next-hop
 Настройка динамической конфигурации хостов
 
 **1.** Устанавливаем сам **DHCP-сервер**:  
-```
+```bash
 apt install isc-dhcp-server
 ```
 
 **2.** После чего переходим в конфигурацию файла `/etc/dhcp/dhcpd.conf` и добавляем следующие строчки:
-```
+```bash
 option domain-name "hq-rtr.au-team.irpo";
 option domain-name-servers 10.0.0.2, 192.168.132.2;
 
@@ -361,13 +371,13 @@ subnet 10.0.3.0 netmask 255.255.255.240 {
 }
 ```
 
-**3.** После чего переходим в конфигурацию файла `/etc/default/isc-dhcp-server` и меняем ее добалвяя данный текст:
-```
-INTERFACESv4="ens39" - порт смотрящий в сторону CLI
+**3.** После чего переходим в конфигурацию файла `/etc/default/isc-dhcp-server` и меняем ее добавляя данный текст:
+```bash
+INTERFACESv4="ens38" - порт смотрящий в сторону CLI
 ```
 
 **4.** Включаем сервиc **`DHCP`** и добавим в автозагрузку на **`HQ-RTR`**:
-```
+```bash
 systemctl start isc-dhcp-server
 systemctl enable isc-dhcp-server
 ```
@@ -461,7 +471,7 @@ options {
 
 **3.** Далее требуется изменить конфигурацию файла **`/etc/resolv.conf`**:
 
-```
+```bash
 search au-team.irpo
 nameserver 10.0.0.2
 search localdomain
@@ -470,7 +480,7 @@ nameserver 192.168.132.2
 
 **4.** После чего требуется прописать в **`/etc/bind/named.conf.local`**:
 
-```
+```bash
 zone "au-team.irpo" {
         type master;
         file "/etc/bind/zones/db.au-team.irpo";
@@ -490,14 +500,14 @@ zone "3.0.10.in-addr.arpa" {
 
 **5.** Далее следующими командами **создаём копию** файла и присваиваем права:
 
-```
+```bash
 cp /etc/bind/db.local /etc/bind/zones/db.au-team.irpo
 ```
 
 
 **6.** После чего приводим **файл `/etc/bind/zones/db.au-team.irpo`** к следующему виду:
 
-```
+```bash
 $TTL    86400
 @       IN      SOA     au-team.irpo. root.au-team.irpo. (
                               2         ; Serial
@@ -518,13 +528,13 @@ wiki.au-team.irpo.      IN      CNAME   hq-rtr.au-team.irpo.
 ```
 
 **7.** После чего **создаем файлы** командами:
-```
+```bash
 cp /etc/bind/db.127 /etc/bind/zones/db.10
 cp /etc/bind/db.127 /etc/bind/zones/db.10.3
 ```
 
 **8.** После изменений файл **`db.10`** выглядит так:
-```
+```bash
 $TTL    604800
 @       IN      SOA     au-team.irpo. root.au-team.irpo. (
                               2         ; Serial
@@ -540,7 +550,7 @@ $TTL    604800
 
 
 **9.** После изменений файл **`db.10.3`** выглядит так:
-```
+```bash
 $TTL    604800
 @       IN      SOA     au-team.irpo. root.au-team.irpo. (
                               2         ; Serial
@@ -556,13 +566,13 @@ $TTL    604800
 
 
 **10.** После чего можно проверить **ошибки** командой:
-```
+```bash
 named-checkconf -z
 ```
 
 **11.** А также перезапускаем **`bind`** командой:
 
-```
+```bash
 systemctl restart named bind9
 ```
 
