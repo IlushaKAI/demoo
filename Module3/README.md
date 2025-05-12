@@ -46,16 +46,18 @@ ansible-playbook -i /etc/ansible/demo /etc/ansible/inventory_pc.yml
 
 ## Задание 9
 Реализуйте механизм резервного копирования конфигурации для машин HQ-RTR и BR-RTR, через Ansible на BR-SRV
-<br/>
+
+
 Теже начальные требования что и в 8-ом задании + net_admin на обоих роутерах должен иметь возможность запускать sudo без пароля. Напомню, для этого надо:
-<br/>
+
+
 в файле `/etc/sudoers` написать:
 ```
 net_admin    ALL=(ALL:ALL)    NOPASSWD: ALL
 ```
 пробелы сделаны TABом
 
-<br/>
+
 от лица sshuser создаем файл `/etc/ansible/backup_network.yml` и в нем пишем
 
 ```yml
