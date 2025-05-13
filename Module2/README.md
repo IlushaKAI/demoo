@@ -102,6 +102,13 @@ exportfs -arv
 ```bash
 systemctl enable --now nfs-server
 ```
+
+Если после перезагрузки сервера вас встречает аварийный терминал, то вам нужно выполнить команду
+```
+lsblk
+```
+чтобы узнать номер смонтированного диска(допустим md127). Нужно запомнить этот номер и записать его вместо 0 в `/etc/fstab`. После перезагрузки hq srv должен нормально работать
+
 ### Настраиваем на HQ_CLI:
 **1.** Устанавливаем NFS клиент:
 
@@ -129,15 +136,16 @@ chmod 777 /mnt/nfs
 ВСЕ ПРОБЕЛЫ СДЕЛАНЫ TAB`ом
 ```
 
-**5.** Далее монтируем ресурс командой:
+**5.** Далее монтируем ресурс командой и перезагружаем демона:
 
 ```bash
 mount -a
+systemctl daemon-reload
 ```
 
 ❗ После можно проверить монтирование командой:
 
-```
+```bash
 df -h
 ```
 ## ✔️ Задание 3
@@ -152,14 +160,14 @@ df -h
 
 
 **1.** Устанавливаем `chrony` на **HQ-RTR** командой:
-```
+```bash
 sudo apt install chrony
 ```
 
 
 **2.** Далее редактируем конфигурационный файл **`sudo nano /etc/chrony/chrony.conf`**
 
-```
+```bash
 #server ntp4.uniiftri.ru iburst <- ПОДОБНЫЕ ЗАПИСИ КОММЕНТИРУЕМ!!!
 
 /// ДОПИСЫВАЕМ ВСЁ ЧТО СНИЗУ ///
@@ -181,7 +189,7 @@ allow 0/0
 
 
 **3.** После установки, **перезагружаем сервис** и **добавляем в автозагрузку**:
-```
+```bash
 systemctl restart chrony
 
 systemctl enable --now  chrony
@@ -191,27 +199,38 @@ systemctl enable --now  chrony
 Настройка на HQ-SRV HQ-CLI BR-RTR BR-SRV(на всех аналогично):
 Устанавливаем chrony:
 
-`apt install chrony`
+```bash
+apt install chrony
+```
 
-Далее редактируем конфигурационный файл `sudo nano /etc/chrony/chrony.conf`
+Далее редактируем конфигурационный файл 
+```bash
+sudo nano /etc/chrony/chrony.conf
+```
 Прописываем наш сервер:
-
-`server 10.0.0.1 iburst prefer`
-
-И комментируем строчку: `#pool 2.debian.pool.ntp.org iburst`
+```bash
+server 10.0.0.1 iburst prefer
+# И комментируем строчку: 
+#pool 2.debian.pool.ntp.org iburst
+```
 
 После перезагружаем сервис и добавляем в автозагрузку:
-`systemctl restart chrony`
-
-`systemctl enable --now  chrony`
+```bash
+systemctl restart chrony
+systemctl enable --now  chrony
+```
 
 Проверка на роутере:
-	`chronyc clients`
+```bash
+chronyc clients
+```
 	
 ![|663x134](./chronycclients.png)
 
 Проверка на клиенте:
-	`chronyc sources`
+```bash
+chronyc sources
+```
 	
 ![|663x134](./chronycclients.png)
 
@@ -526,24 +545,15 @@ sudo git clone git://git.moodle.org/moodle.git
 ```shell
 cd moodle
 ```
-**8.** Чтобы узнать, какая версия является последней доступной, выполните:
-```shell
-cd moodle
-```
-**9.** ~~Клонирование репозитория **Moodle**(это способ настройки флекса, у нас так не вышло)~~
-```shell
-sudo git checkout -t origin/MOODLE_452_STABLE
-                                    ^ данная версия актуальна в момент написания методички, проверяйте версию в git tag
-```
 
-**9.**  У нас вышло так:
+**8.**  У нас вышло так:
 
 ```bash
 git branch --track MOODLE_405_STABLE origin/MOODLE_405_STABLE
 git checkout MOODLE_405_STABLE
 ```
 
-**10.** Настройка директорий и прав:
+**9.** Настройка директорий и прав:
 
 ```bash
 sudo mkdir -p /var/www/moodledata
@@ -552,12 +562,12 @@ sudo chmod -R 770 /var/www/moodledata
 sudo chown -R www-data:www-data /var/www/html/moodle
 ```
 
-**11.** Создание файла конфигурации **Apache**
+**10.** Создание файла конфигурации **Apache**
 ```bash
 sudo nano /etc/apache2/sites-available/moodle.conf
 ```
 
-**12.** Вставляем следующие настройки в эту конфигурацию:
+**11.** Вставляем следующие настройки в эту конфигурацию:
 ```bash
 <VirtualHost *:80>
     ServerAdmin admin@example.com
@@ -573,13 +583,13 @@ sudo nano /etc/apache2/sites-available/moodle.conf
 </VirtualHost>
 ```
 
-**13.** Активируем новый сайт и модули:
+**12.** Активируем новый сайт и модули:
 ```bash
 sudo a2ensite moodle.conf
 sudo a2enmod rewrite
 ```
 
-**14.** Перезапускаем **Apache**:
+**13.** Перезапускаем **Apache**:
 ```bash
 sudo systemctl restart apache2
 ```
