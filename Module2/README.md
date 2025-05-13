@@ -507,10 +507,10 @@ EXIT;
 
 **5.** Перезапускаем MariaDB:
 ```shell
-systemctl restart mariadb-server
+systemctl restart mariadb
 ```
 
-## Установка *Moodle* через *Git*
+### Установка *Moodle* через *Git*
 
 ### HQ-SRV
 
@@ -529,7 +529,6 @@ cd moodle
 **8.** Чтобы узнать, какая версия является последней доступной, выполните:
 ```shell
 cd moodle
-git tag
 ```
 **9.** ~~Клонирование репозитория **Moodle**(это способ настройки флекса, у нас так не вышло)~~
 ```shell
@@ -540,7 +539,6 @@ sudo git checkout -t origin/MOODLE_452_STABLE
 **9.**  У нас вышло так:
 
 ```bash
-git branch -a
 git branch --track MOODLE_405_STABLE origin/MOODLE_405_STABLE
 git checkout MOODLE_405_STABLE
 ```
@@ -551,7 +549,7 @@ git checkout MOODLE_405_STABLE
 sudo mkdir -p /var/www/moodledata
 sudo chown -R www-data:www-data /var/www/moodledata
 sudo chmod -R 770 /var/www/moodledata
-sudo chown -R www-data:www-data /var/www/moodle
+sudo chown -R www-data:www-data /var/www/html/moodle
 ```
 
 **11.** Создание файла конфигурации **Apache**
@@ -586,11 +584,21 @@ sudo a2enmod rewrite
 sudo systemctl restart apache2
 ```
 
-## Настройка в Moodle в Web-интерфейсе
+### Настройка в Moodle в Web-интерфейсе
 
 **1.** Откройте веб-браузер и перейдите по адресу http://10.0.0.2/moodle.
-Перед установкой возможно нужно будет решить некоторые проблемы совместимости, например
-у нас потребовало отредактировать файл `/etc/php/apache2/php.ini` следующим образом
+В процессе установки укажите данные для подключения к базе данных:
+
+**`Название базы данных`**: moodledb
+
+**`Пользователь`**: moodle
+
+**`Пароль`**: P@ssw0rd
+
+
+
+**2.** Перед установкой возможно нужно будет решить некоторые проблемы совместимости, например
+у нас потребовало отредактировать файл `/etc/php/8.2/apache2/php.ini` следующим образом
 ```php
 extension=php_intl.dll
 
@@ -600,18 +608,16 @@ intl.error_level=E_WARNING
 
 max_input_vars = 5000
 ```
+ и затем обновить конфигурацию apache 
+```bash
+sudo systemctl reload apache2
+```
+И нажать кнопочку обновить внизу страницы установки(где перечисляются модули)
 
 Сами мы это не придумали, ошибки заботливо ссылают на документацию. Читайте внимательно если че
 
-**2.** В процессе установки укажите данные для подключения к базе данных:
-
-**`База данных`**: moodledb
-
-**`Пользователь`**: moodle
-
-**`Пароль`**: P@ssw0rd
-
 Дальше включаем соображалку и заполняем поля желательно по заданию, на крайняк по наитию
+
 ## ✔️ Задание 8
 
 ### Настройте веб-сервер nginx как обратный прокси-сервер на HQ-RTR
