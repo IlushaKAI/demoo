@@ -13,37 +13,51 @@ tags: [[demo]]
 При необходимости перезагружаем машину
 Шаблон команды настройки массива для наглядности
 
-```
+```bash
 mdadm --create /dev/<название массива> --level=<Версия RAID> --raid-devices=<Количество устройств для массива> /dev/<Диск 1> ... /dev/<Диск n>
 ```
 
 В нашем случае команда имеет вид
-
-`/sbin/mdadm --create /dev/md0 --level=5 --raid-devices=3 /dev/sdb /dev/sdc /dev/sdd`
+```bash
+/sbin/mdadm --create /dev/md0 --level=5 --raid-devices=3 /dev/sdb /dev/sdc /dev/sdd
+```
 
 Создайте раздел, отформатируйте раздел, в качестве файловой системы используйте ext4
-
-`sudo mkfs -t ext4 /dev/md0`
+```bash
+sudo mkfs -t ext4 /dev/md0
+```
 
 Имя устройства – md0, конфигурация массива размещается в файле /etc/mdadm.conf
-
-`/sbin/mdadm --detail --scan >> /etc/mdadm.conf`
+```bash
+/sbin/mdadm --detail --scan >> /etc/mdadm.conf
+```
 
 Обеспечьте автоматическое монтирование в папку /raid5 
-
-`mkdir /mnt/raid5`
+```bash
+mkdir /mnt/raid5
+```
 
 в файле /etc/fstab пишем(пробелы это tab)
-```
+```bash
 /dev/md0        /mnt/raid5      ext4    defaults        0       0
 ```
-перезагружаем демона
-`systemctl daemon-reload`
-Монтируем все диски указанные в fstab
-`mount -a`
-Проверяем монтирование командой df -h
 
-*Результатом вывода путь будет /mnt/raid5*
+перезагружаем демона
+```bash
+systemctl daemon-reload
+```
+
+Монтируем все диски указанные в fstab
+```bash
+mount -a
+```
+
+Проверяем монтирование командой 
+```bash
+df -h
+```
+
+Результатом вывода путь будет /mnt/raid5
 
 <p align="center">
   <img src="Mounted.png" alt="Монтированный диск" />
@@ -55,61 +69,61 @@ mdadm --create /dev/<название массива> --level=<Версия RAID
 
 **1.** Устанавливаем **утилиты:**
 
-```
+```bash
 apt-get install -y nfs-server
 ```
 
 **2.** **Создаем директорию** командой:
 
-```
+```bash
 mkdir /mnt/raid5/nfs
 ```
 
 **3.** Задаем **права директории**:
 
-```
-chmod 766 /mnt/raid5/nfs
+```bash
+chmod 777 /mnt/raid5/nfs
 ```
 
 **4.** В файл **`/etc/exports`** добавляем строку(ip нашего HQ-CLI):
 
-```
-/mnt/raid5/nfs 10.0.3.0/28(rw,no_root_squash)
+```bash
+echo "/mnt/raid5/nfs 10.0.3.0/28(rw,sync,no_subtree_check,no_root_squash)" > /etc/exports
 ```
 
 **5.** **Экспорт** файловой системы:
 
-```
+```bash
 exportfs -arv
 ```
 
 **6.** Запускаем **NFS сервер** командой:
 
-```
+```bash
 systemctl enable --now nfs-server
 ```
 ### Настраиваем на HQ_CLI:
 **1.** Устанавливаем NFS клиент:
 
-```
+```bash
 apt-get install -y nfs-client
 ```
 
 **2.** Создаем директорию командой:
 
-```
+```bash
 mkdir /mnt/nfs
 ```
 
 **3.** После задаем права:
 
-```
+```bash
 chmod 777 /mnt/nfs
 ```
 
 **4.** Добавляем в файл `/etc/fstab` строку:
 
-```
+```bash
 10.0.0.2:/mnt/raid5/nfs  /mnt/nfs  nfs  defaults  0  0
 
 ВСЕ ПРОБЕЛЫ СДЕЛАНЫ TAB`ом
@@ -117,7 +131,7 @@ chmod 777 /mnt/nfs
 
 **5.** Далее монтируем ресурс командой:
 
-```
+```bash
 mount -a
 ```
 
@@ -202,7 +216,7 @@ systemctl enable --now  chrony
 ![|663x134](./chronycclients.png)
 
 
-## ✔️ Задание 4 - (Тестируется)
+## ✔️ Задание 4
 
 ### Сконфигурируйте ansible на сервере BR-SRV
 
@@ -212,13 +226,13 @@ systemctl enable --now  chrony
 ## Настройка ansible производится на `BR-SRV`
 
 **1.** Для начала устанавливаем "Ansible" командой:
-```
+```bash
 apt-get install ansible -y
 ```
 
 **2.** Создаём пары SSH-ключей следующей командой:
 
-```
+```bash
 ssh-keygen -t rsa
 ```
 - По итогу создания ключей в каталоге пользователя под которым сидим `sshuser` или же `root`, появятся ключи:
@@ -236,7 +250,7 @@ ssh-keygen -t rsa
 >
 
 **3.** Заходим под пользователя **`sshuser`**:
-```
+```bash
 su sshuser
 ```
 
@@ -244,35 +258,35 @@ su sshuser
 
 - Копируем ключ для пользователя **sshuser** на **`HQ-SRV`**
   - На HQ-SRV ssh порт изменен, указываем его:
-```
+```bash
 ssh-copy-id -p 2024 sshuser@10.0.0.2
 ```
 
 - Копируем ключ для пользователя **user** на **`HQ-CLI`**
-```
+```bash
 ssh-copy-id user@10.0.3.3
 ```
 
 - Копируем ключ для пользователя **net_admin** на **`HQ-RTR`**
-```
+```bash
 ssh-copy-id net_admin@172.16.4.2
 ```
 
 - Копируем ключ для пользователя **net_admin** на **`BR-RTR`**
-```
+```bash
 ssh-copy-id net_admin@172.16.5.2
 ```
 
 ### Готовим файл инвентаря (hosts)
 
 **1.** Создаем файл инвентаря **`/etc/ansible/demo`**
-```
+```bash
 nano /etc/ansible/demo
 ```
 
 **2.** Приводим **файл** в следующий вид:
 
-```
+```bash
 [hq]
 10.0.0.2 ansible_port=2024 ansible_user=sshuser
 10.0.3.3 ansible_user=viktorov
@@ -290,7 +304,7 @@ nano /etc/ansible/demo
 
 **1.** Что бы запустить модуль ping на всех хостах, перечисленных файле инвентаря **`/etc/ansible/demo`** пишем следующую команду:
 
-```shell
+```bash
 ansible all -i /etc/ansible/demo -m ping
 ```
 
@@ -299,7 +313,7 @@ ansible all -i /etc/ansible/demo -m ping
 
 **2.** Для управления поведением обнаружения в глобальном масштабе необходимо в файле конфигурации **`ansible /etc/ansible/ansible.cfg`** в разделе **`[defaults]`** прописать ключ **`interpreter_python`** с параметром **`auto_silent`**. В большинстве дистрибутивов прописываем вручную.
 
-```shell
+```bash
 nano /etc/ansible/ansible.cfg
 
 [defaults]
@@ -308,7 +322,7 @@ interpreter_python=auto_silent
 
 
 **3.** Запускаем команду `ping` на всех хостах:
-```shell
+```bash
 ansible all -i /etc/ansible/demo -m ping
 ```
 
@@ -345,7 +359,7 @@ systemctl enable docker --now
 ```
 
 **4.** Проверяем статус запущенной службы **(Docker)** и информацию:
-```shell
+```bash
 systemctl status docker
 
 docker info
@@ -356,7 +370,7 @@ docker info
 **5.**  При помощи `CLI` заходим в **YandexBrowser**:
 копируем конфиг, отсюда https://www.mediawiki.org/wiki/Docker/Hub#Adding_a_Database_Server
 **6.** В домашней директории пользователя root создаем композер-файл **wiki.yaml**:
-```
+```bash
 nano wiki.yaml
 ```
 **8.** Копируем и вставляем содержимое c сайта в **wiki.yml**:
@@ -364,17 +378,17 @@ nano wiki.yaml
  <img src="phplocalconfigwiki.png" alt="Конфиг" width="400" height="400" />
 
 **9.** Чтобы отдельный **volume** для хранения базы данных **имел правильное имя** - создаём его средствами **docker**:
-```
+```bash
 sudo docker volume create dbvolume
 ```
 
 **`Информация|Проверка.`** Посмотреть все тмеющиеся **volume** можно командой:
-```
+```bash
 sudo docker volume ls
 ```
 
 **10.** Выполняем сборку и запуск стека контейнеров с приложением **MediaWiki** и базой данных описанных в файле **wiki.yml**:
-```
+```bash
 sudo docker-compose -f wiki.yaml up -d
 ```
 ### Настройка Wiki через WEB-интерфейс:
@@ -392,18 +406,18 @@ sudo docker-compose -f wiki.yaml up -d
 ![image](wiki2.png)
 
 **6.** Будет автоматически скачен файл **`LocalSettings.php`** - который необходимо передать в директорию **`/home/sshuser`** туда же где лежит **`wiki.yaml`**:
-```
+```bash
 mv /home/sshuser/Загрузки/LocalSettings.php /home/sshuser/
 ```
 **7.** Раскомментируем строку в файле **`wiki.yaml`** :
-```
+```bash
 nano /home/sshuser/wiki.yaml
 ```
 
 ![|478x362](./phplocalconfigwiki.png)
 
 **8.** Перезапускаем сервисы средствами **`docker-compose`**:
-```
+```bash
 docker-compose -f wiki.yaml stop
 
 docker-compose -f wiki.yaml up -d
@@ -417,7 +431,7 @@ docker-compose -f wiki.yaml up -d
 
 - `Пароль`: WikiP@ssw0rd
 
-## ✔️ Задание 6 (Тестируется)
+## ✔️ Задание 6
 
 ### На маршрутизаторах сконфигурируйте статическую трансляцию портов
 
@@ -431,7 +445,7 @@ docker-compose -f wiki.yaml up -d
 
 в `etc/ufw/before.rules` в блоке nat пишем
 
-```
+```bash
 #to br-srv
 -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 10.0.2.2:8080
 #to br-srv              
@@ -443,13 +457,13 @@ docker-compose -f wiki.yaml up -d
 ### HQ-RTR
 
 **2.** Проброс порта **2024** для HQ-SRV
-```
+```bash
 #2024 to hq-srv
 -A PREROUTING -p tcp --dport 2024 -j DNAT --to-destination 10.0.0.2:2024
 ```
 
 
-## ✔️ Задание 7 (Тестируется)
+## ✔️ Задание 7
 
 ### Запустите сервис moodle на сервере HQ-SRV:
 
@@ -464,7 +478,7 @@ docker-compose -f wiki.yaml up -d
 ### HQ-SRV
 
 **1.** Устанавливаем необходимые **пакеты**:
-```shell
+```bash
 sudo apt update
 
 sudo apt install -y apache2 mariadb-server mariadb-client php php-mysql libapache2-mod-php php-xml php-mbstring php-zip php-curl php-gd php-intl git
@@ -517,7 +531,7 @@ cd moodle
 cd moodle
 git tag
 ```
-**9.** Клонирование репозитория **Moodle**(это способ настройки флекса, у нас так не вышло)
+**9.** ~~Клонирование репозитория **Moodle**(это способ настройки флекса, у нас так не вышло)~~
 ```shell
 sudo git checkout -t origin/MOODLE_452_STABLE
                                     ^ данная версия актуальна в момент написания методички, проверяйте версию в git tag
@@ -525,7 +539,7 @@ sudo git checkout -t origin/MOODLE_452_STABLE
 
 **9.**  У нас вышло так:
 
-```
+```bash
 git branch -a
 git branch --track MOODLE_405_STABLE origin/MOODLE_405_STABLE
 git checkout MOODLE_405_STABLE
@@ -533,7 +547,7 @@ git checkout MOODLE_405_STABLE
 
 **10.** Настройка директорий и прав:
 
-```
+```bash
 sudo mkdir -p /var/www/moodledata
 sudo chown -R www-data:www-data /var/www/moodledata
 sudo chmod -R 770 /var/www/moodledata
@@ -541,12 +555,12 @@ sudo chown -R www-data:www-data /var/www/moodle
 ```
 
 **11.** Создание файла конфигурации **Apache**
-```
+```bash
 sudo nano /etc/apache2/sites-available/moodle.conf
 ```
 
 **12.** Вставляем следующие настройки в эту конфигурацию:
-```
+```bash
 <VirtualHost *:80>
     ServerAdmin admin@example.com
     DocumentRoot /var/www/html/moodle
@@ -562,13 +576,13 @@ sudo nano /etc/apache2/sites-available/moodle.conf
 ```
 
 **13.** Активируем новый сайт и модули:
-```
+```bash
 sudo a2ensite moodle.conf
 sudo a2enmod rewrite
 ```
 
 **14.** Перезапускаем **Apache**:
-```
+```bash
 sudo systemctl restart apache2
 ```
 
@@ -577,7 +591,7 @@ sudo systemctl restart apache2
 **1.** Откройте веб-браузер и перейдите по адресу http://10.0.0.2/moodle.
 Перед установкой возможно нужно будет решить некоторые проблемы совместимости, например
 у нас потребовало отредактировать файл `/etc/php/apache2/php.ini` следующим образом
-```
+```php
 extension=php_intl.dll
 
 [intl]
@@ -623,7 +637,7 @@ nano nano /etc/nginx/nginx.conf
 ```
 
 **4.** Cпускаемся в конец документа и перед последней фигурной скобкой **`}`** прописываем:
-```shell
+```bash
 server  {
         listen 80;
         server_name moodle.au-team.irpo;

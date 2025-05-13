@@ -1,4 +1,30 @@
 tags: [[demo]]
+
+## Задание 4
+Настройте межсетевой экран на маршрутизаторах HQ-RTR и BR-RTR на
+сеть в сторону ISP
+- Обеспечьте работу протоколов http, https, dns, ntp, icmp или
+дополнительных нужных протоколов
+- Запретите остальные подключения из сети Интернет во внутреннюю
+сеть
+
+Запрещаем входящие пакеты, разрешаем исходящие, разрешаем необходимые порты, на которых по умолчанию работают службы
+80 и 443 - http и https
+53 - DNS
+123 - NTP
+icmp по умолчанию разрешен в ufw
+
+```bash
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw allow 53/udp
+sudo ufw allow 53/tcp
+sudo ufw allow 123/udp
+```
+Эту настройку выполняем на HQ-RTR и BR-RTR
 ## Задание 5
 Настройте принт-сервер cups на сервере HQ-SRV.
 - Опубликуйте виртуальный pdf-принтер
