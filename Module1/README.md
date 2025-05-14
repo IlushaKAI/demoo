@@ -68,11 +68,21 @@ sysctl -p
 ufw reset  
 ```
 
-И исходящие
+Разрешить исходящие пакеты и доступ из всех подсетей
 ```bash
 ufw default allow outgoing
+ufw allow from any
 ```
 
+*На HQ-RTR и BR-RTR нужно разрешить трафик из локальных подсетей(по сути все подключенные)*
+```bash
+ufw allow from 172.16.4.0/28
+ufw allow from 172.16.5.0/28
+ufw allow from 192.168.1.0/24
+ufw allow from 10.0.0.0/26
+ufw allow from 10.0.3.0/28
+ufw allow from 10.0.2.0/27
+```
 Затем открываем файл настроек ufw
 ```bash
 nano /etc/ufw/before.rules
@@ -334,7 +344,6 @@ network          next-hop
 –A POSTROUTING –s 10.0.0.0/26 –o ens37 –j MASQUERADE
 –A POSTROUTING –s 10.0.3.0/28 –o ens37 –j MASQUERADE  
 ```
-Не забываем про волшебные 4 строчки, которые разрешают прохождение всему трафику
 ### Настройка динамической сетевой трансляции на `BR-RTR`
 
 ```

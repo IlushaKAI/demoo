@@ -384,8 +384,6 @@ systemctl status docker
 docker info
 ```
 
-
-
 **5.**  При помощи `CLI` заходим в **YandexBrowser**:
 копируем конфиг, отсюда https://www.mediawiki.org/wiki/Docker/Hub#Adding_a_Database_Server
 **6.** В домашней директории пользователя root создаем композер-файл **wiki.yaml**:
@@ -438,7 +436,6 @@ nano /home/sshuser/wiki.yaml
 **8.** Перезапускаем сервисы средствами **`docker-compose`**:
 ```bash
 docker-compose -f wiki.yaml stop
-
 docker-compose -f wiki.yaml up -d
 ```
 
