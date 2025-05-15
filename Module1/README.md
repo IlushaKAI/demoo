@@ -27,14 +27,14 @@ tags: [[demo]]
 <br>
 перед установкой желательно выполнить apt-get update
 
-| Устройство | Пакеты                                                                                         |
-| ---------- | ---------------------------------------------------------------------------------------------- |
-| ISP        | `apt-get install network-manager ufw frr ssh -y`                                               |
-| HQ-RTR     | `apt-get install network-manager sudo ufw ssh frr isc-dhcp-server chrony nginx vlan mdadm -y`  |
-| HQ-SRV     | `apt-get install openssh-server ssh bind9 bind9-utils chrony nfs-server prometheus rsyslog -y` |
-| HQ-CLI     | `apt-get install chrony ssh nfs-client cups-client -y`                                         |
-| BR-RTR     | `apt-get install network-manager sudo ssh ufw frr chrony -y`                                   |
-| BR-SRV     | `apt-get install openssh-server ssh chrony docker docker-compose docker-doc ansible samba -y`  |
+| Устройство | Пакеты                                                                                               |
+| ---------- | ---------------------------------------------------------------------------------------------------- |
+| ISP        | `apt-get install network-manager ufw frr ssh -y`                                                     |
+| HQ-RTR     | `apt-get install network-manager sudo ufw ssh frr isc-dhcp-server chrony nginx vlan -y`              |
+| HQ-SRV     | `apt-get install openssh-server ssh bind9 bind9-utils chrony nfs-server prometheus rsyslog mdadm -y` |
+| HQ-CLI     | `apt-get install chrony ssh nfs-client cups-client -y`                                               |
+| BR-RTR     | `apt-get install network-manager sudo ssh ufw frr chrony -y`                                         |
+| BR-SRV     | `apt-get install openssh-server ssh chrony docker docker-compose docker-doc ansible samba -y`        |
 
 ## ✔️ 1.1
 ### Произведите базовую настройку устройств
@@ -197,7 +197,10 @@ PermitRootLogin no
 MaxAuthTries 2
 Banner /etc/ssh/banner 
 ```
-(предварительно разумеется надо создать и написать содержимое баннера)
+создаем содержимое баннера
+```shell
+echo "Authorized access only" >> /etc/ssh/banner
+```
 
 Далее необходимо перезапустить **`SSH`** коммандой:
   
