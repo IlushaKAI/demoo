@@ -65,23 +65,23 @@ sysctl -p
   - На ISP настройте динамическую сетевую трансляцию в сторону HQ-RTR и BR-RTR для доступа к сети Интернет
   Для начала на всякий случай сбросим все настройки ufw
 ```bash
-ufw reset  
+sudo ufw reset  
 ```
 
 Разрешить исходящие пакеты и доступ из всех подсетей
 ```bash
-ufw default allow outgoing
-ufw allow from any
+sudo ufw default allow outgoing
+sudo ufw allow from any
 ```
 
 *На HQ-RTR и BR-RTR нужно разрешить трафик из локальных подсетей(по сути все подключенные)*
 ```bash
-ufw allow from 172.16.4.0/28
-ufw allow from 172.16.5.0/28
-ufw allow from 192.168.1.0/24
-ufw allow from 10.0.0.0/26
-ufw allow from 10.0.3.0/28
-ufw allow from 10.0.2.0/27
+sudo ufw allow from 172.16.4.0/28
+sudo ufw allow from 172.16.5.0/28
+sudo ufw allow from 192.168.1.0/24
+sudo ufw allow from 10.0.0.0/26
+sudo ufw allow from 10.0.3.0/28
+sudo ufw allow from 10.0.2.0/27
 ```
 Затем открываем файл настроек ufw
 ```bash
@@ -112,8 +112,8 @@ COMMIT
 ```
 Затем перезапускаем 
 ```bash
-ufw disable
-ufw enable
+sudo ufw disable
+sudo ufw enable
 ```
 ## ✔️ Задание 1.3
 **Создание локальных учетных записей**
