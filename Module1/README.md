@@ -27,6 +27,11 @@ tags: [[demo]]
 <br>
 перед установкой желательно выполнить apt-get update
 
+Для BR-SRV cначала необходимо добавить зеркало Яндекс в список источников!
+```bash
+echo "deb http://mirror.yandex.ru/debian bookworm main contrib non-free" >> /etc/apt/sources
+```
+
 | Устройство | Пакеты                                                                                               |
 | ---------- | ---------------------------------------------------------------------------------------------------- |
 | ISP        | `apt-get install network-manager ufw frr ssh -y`                                                     |
@@ -467,7 +472,7 @@ systemctl enable isc-dhcp-server
 apt-get install bind9 bind9-utils
 ```
 
-**2.** Далее необходимо сконфигурировать файл **`/etc/bind/named.conf.option`** таким образом:
+**2.** Далее необходимо сконфигурировать файл **`/etc/bind/named.conf.options`** таким образом:
 
 ```bash
 options {
