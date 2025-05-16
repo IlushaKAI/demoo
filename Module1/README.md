@@ -29,7 +29,7 @@ tags: [[demo]]
 
 Для BR-SRV cначала необходимо добавить зеркало Яндекс в список источников!
 ```bash
-echo "deb http://mirror.yandex.ru/debian bookworm main contrib non-free" >> /etc/apt/sources
+echo "deb http://mirror.yandex.ru/debian bookworm main contrib non-free" >> /etc/apt/sources.list
 ```
 
 | Устройство | Пакеты                                                                                               |
