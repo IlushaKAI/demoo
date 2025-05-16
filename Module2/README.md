@@ -391,7 +391,8 @@ nano wiki.yaml
 ```
 **8.** Копируем и вставляем содержимое c сайта в **wiki.yml**:
 
- <img src="phplocalconfigwiki.png" alt="Конфиг" width="400" height="400" />
+![image|408x386](phplocalconfigwiki.png)
+
 
 **9.** Чтобы отдельный **volume** для хранения базы данных **имел правильное имя** - создаём его средствами **docker**:
 ```bash
@@ -430,7 +431,7 @@ mv /home/sshuser/Загрузки/LocalSettings.php /home/sshuser/
 nano /home/sshuser/wiki.yaml
 ```
 
-![|478x362](./phplocalconfigwiki.png)
+![|408x386](./phplocalconfigwiki.png)
 
 **8.** Перезапускаем сервисы средствами **`docker-compose`**:
 ```bash
